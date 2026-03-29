@@ -302,6 +302,9 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
             except Exception:
                 st.caption(f"Dados da API até: {last_game}")
 
+        st.markdown("---")
+        st.caption("🇧🇷 Disponível em Português")
+
     return cache["teams"][selected_abbr], page
 
 
