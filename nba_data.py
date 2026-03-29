@@ -1003,8 +1003,16 @@ def fetch_game_details(game_id: str) -> dict:
                     if e not in player_highlights.get(p["name"], []):
                         player_highlights.setdefault(p["name"], []).append(e)
 
+        # Para todo jogador com destaque, garantir pts >= 20 e reb >= 5
         highlights = []
         for name, stats in player_highlights.items():
+            p_data = next((p for p in players if p["name"] == name), None)
+            if p_data:
+                if p_data["pts"] >= 20 and not any("pts" in s for s in stats):
+                    stats.insert(0, f"{p_data['pts']} pts")
+                if p_data["reb"] >= 5 and not any("reb" in s for s in stats):
+                    idx = 1 if any("pts" in s for s in stats) else 0
+                    stats.insert(idx, f"{p_data['reb']} reb")
             highlights.append(f"**{name}**: {', '.join(stats)}")
 
         team_stats["highlights"] = highlights
