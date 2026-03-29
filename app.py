@@ -1055,6 +1055,7 @@ def page_comparison(all_teams: dict):
             ]
             # Mapas: coluna display -> (chave h2h, chave season, lower_is_better)
             compare_map = {
+                "Min": ("min", "min", False),
                 "Pts": ("pts", "pts", False),
                 "Reb": ("reb", "reb", False),
                 "Ast": ("ast", "ast", False),
