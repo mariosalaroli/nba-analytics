@@ -1817,7 +1817,7 @@ def page_players():
 
     def trend_chart(values, title, avg_val, season_avg):
         fig, ax = plt.subplots(figsize=(6, 2.8))
-        palette = ["#2e7d32" if v >= avg_val else "#c62828" for v in values]
+        palette = ["#2e7d32" if v >= season_avg else "#c62828" for v in values]
         bars = ax.bar(
             range(len(values)),
             values,
