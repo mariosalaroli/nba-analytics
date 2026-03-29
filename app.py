@@ -1269,9 +1269,14 @@ def page_comparison(all_teams: dict):
 
     teams_list = list(all_teams.keys())
 
-    # Persistir seleções
-    if "_compare_a" not in st.session_state:
-        st.session_state["_compare_a"] = teams_list[0]
+    # Persistir seleções — Time A acompanha o time selecionado na sidebar
+    sidebar_team = st.session_state.get("sidebar_team", teams_list[0])
+    if (
+        "_compare_a" not in st.session_state
+        or st.session_state.get("_compare_a_synced") != sidebar_team
+    ):
+        st.session_state["_compare_a"] = sidebar_team
+        st.session_state["_compare_a_synced"] = sidebar_team
     if "_compare_b" not in st.session_state:
         st.session_state["_compare_b"] = (
             teams_list[1] if len(teams_list) > 1 else teams_list[0]
