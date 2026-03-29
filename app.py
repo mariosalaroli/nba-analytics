@@ -19,6 +19,7 @@ from nba_data import (
     fetch_player_game_log,
     fetch_head_to_head,
     fetch_h2h_player_stats,
+    fetch_game_details,
     load_all_players,
     get_connection,
     needs_update,
@@ -824,12 +825,99 @@ def page_games(team: dict):
     )
 
     st.markdown(
-        '<div class="section-header">Log completo</div>', unsafe_allow_html=True
+        '<div class="section-header">Detalhes das partidas</div>',
+        unsafe_allow_html=True,
     )
-    df = pd.DataFrame(team["last_games"])
-    df.columns = ["Data", "Confronto", "R", "Pts", "Ast", "Reb", "FG%"]
-    df["R"] = df["R"].map({"W": "✅ V", "L": "❌ D"})
-    st.dataframe(df, use_container_width=True, hide_index=True)
+
+    for i, g in enumerate(team["last_games"][:10]):
+        game_id = g.get("game_id")
+        icon = "✅" if g["wl"] == "W" else "❌"
+        label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} pts"
+
+        with st.expander(label, expanded=False):
+            if not game_id:
+                st.info("Game ID não disponível para este jogo.")
+                continue
+
+            with st.spinner("Carregando box score..."):
+                details = fetch_game_details(game_id)
+
+            if not details or len(details["teams"]) < 2:
+                st.warning("Não foi possível carregar os detalhes.")
+                continue
+
+            t1, t2 = details["teams"][0], details["teams"][1]
+
+            # Placar
+            st.markdown(
+                f"<div style='text-align:center;font-size:24px;font-weight:700;"
+                f"font-family:DM Mono,monospace;margin-bottom:12px;'>"
+                f"{t1['city']} {t1['name']} "
+                f"<span style='color:{get_team_color(t1['abbr'])}'>{t1['pts']}</span>"
+                f" × "
+                f"<span style='color:{get_team_color(t2['abbr'])}'>{t2['pts']}</span>"
+                f" {t2['city']} {t2['name']}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+            # Stats comparativas dos times
+            stat_labels = [
+                "PTS",
+                "REB",
+                "AST",
+                "STL",
+                "BLK",
+                "TOV",
+                "OREB",
+                "DREB",
+                "FG",
+                "FG%",
+                "3P",
+                "3P%",
+                "FT",
+                "FT%",
+            ]
+            stat_keys = [
+                "pts",
+                "reb",
+                "ast",
+                "stl",
+                "blk",
+                "tov",
+                "oreb",
+                "dreb",
+                "fg",
+                "fg_pct",
+                "fg3",
+                "fg3_pct",
+                "ft",
+                "ft_pct",
+            ]
+            comp_rows = []
+            for lbl, key in zip(stat_labels, stat_keys):
+                v1 = t1[key]
+                v2 = t2[key]
+                comp_rows.append(
+                    {
+                        t1["abbr"]: v1,
+                        "Stat": lbl,
+                        t2["abbr"]: v2,
+                    }
+                )
+            df_comp = pd.DataFrame(comp_rows)
+            st.dataframe(df_comp, use_container_width=True, hide_index=True)
+
+            # Destaques
+            dc1, dc2 = st.columns(2)
+            with dc1:
+                st.markdown(f"**{t1['abbr']} — Destaques**")
+                for h in t1.get("highlights", []):
+                    st.markdown(h)
+            with dc2:
+                st.markdown(f"**{t2['abbr']} — Destaques**")
+                for h in t2.get("highlights", []):
+                    st.markdown(h)
 
 
 def _go_to_player(player_name: str):

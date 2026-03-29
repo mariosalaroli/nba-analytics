@@ -110,6 +110,7 @@ def init_db(conn: sqlite3.Connection):
         );
         CREATE TABLE IF NOT EXISTS games (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id   TEXT,
             team_abbr TEXT,
             date      TEXT,
             matchup   TEXT,
@@ -256,6 +257,7 @@ def fetch_last_games(team_id: int, n: int = 10) -> list[dict]:
     for _, row in df.iterrows():
         games.append(
             {
+                "game_id": str(row["Game_ID"]),
                 "date": str(row["GAME_DATE"]),
                 "matchup": str(row["MATCHUP"]),
                 "wl": str(row["WL"]),
@@ -496,11 +498,12 @@ def save_to_db(conn: sqlite3.Connection):
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO games
-                    (team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
+                    (game_id, team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
                      stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
+                        g["game_id"],
                         abbr,
                         g["date"],
                         g["matchup"],
@@ -666,7 +669,7 @@ def load_all_teams(conn: sqlite3.Connection) -> dict:
     for r in rows:
         abbr = r["abbreviation"]
         games_rows = conn.execute(
-            "SELECT date, matchup, wl, pts, oreb, dreb, reb, ast, stl, blk, "
+            "SELECT game_id, date, matchup, wl, pts, oreb, dreb, reb, ast, stl, blk, "
             "tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus FROM games "
             "WHERE team_abbr = ? ORDER BY date DESC",
             (abbr,),
@@ -809,6 +812,155 @@ def fetch_head_to_head(team_id: int, opponent_abbr: str) -> list[dict]:
             }
         )
     return games
+
+
+def fetch_game_details(game_id: str) -> dict:
+    """Busca box score completo de um jogo: stats dos dois times e jogadores."""
+    time.sleep(SLEEP)
+    bs = BoxScoreTraditionalV3(game_id=game_id)
+    df = bs.get_data_frames()[0]
+
+    teams_in_game = df["teamId"].unique()
+    result = {"teams": [], "players": {}}
+
+    for tid in teams_in_game:
+        df_team = df[df["teamId"] == tid]
+        # Buscar abreviação do time
+        team_abbr = str(df_team.iloc[0].get("teamTricode", ""))
+        team_city = str(df_team.iloc[0].get("teamCity", ""))
+        team_name = str(df_team.iloc[0].get("teamName", ""))
+
+        # Totais do time (somar jogadores)
+        t_pts = t_reb = t_ast = t_stl = t_blk = t_tov = 0
+        t_fgm = t_fga = t_fg3m = t_fg3a = t_ftm = t_fta = t_oreb = t_dreb = 0
+        players = []
+
+        for _, row in df_team.iterrows():
+            pts = int(row["points"]) if pd.notna(row["points"]) else 0
+            reb = int(row["reboundsTotal"]) if pd.notna(row["reboundsTotal"]) else 0
+            ast = int(row["assists"]) if pd.notna(row["assists"]) else 0
+            stl = int(row["steals"]) if pd.notna(row["steals"]) else 0
+            blk = int(row["blocks"]) if pd.notna(row["blocks"]) else 0
+            tov = int(row["turnovers"]) if pd.notna(row["turnovers"]) else 0
+            fgm = int(row["fieldGoalsMade"]) if pd.notna(row["fieldGoalsMade"]) else 0
+            fga = (
+                int(row["fieldGoalsAttempted"])
+                if pd.notna(row["fieldGoalsAttempted"])
+                else 0
+            )
+            fg3m = (
+                int(row["threePointersMade"])
+                if pd.notna(row["threePointersMade"])
+                else 0
+            )
+            fg3a = (
+                int(row["threePointersAttempted"])
+                if pd.notna(row["threePointersAttempted"])
+                else 0
+            )
+            ftm = int(row["freeThrowsMade"]) if pd.notna(row["freeThrowsMade"]) else 0
+            fta = (
+                int(row["freeThrowsAttempted"])
+                if pd.notna(row["freeThrowsAttempted"])
+                else 0
+            )
+            oreb = (
+                int(row["reboundsOffensive"])
+                if pd.notna(row.get("reboundsOffensive"))
+                else 0
+            )
+            dreb = (
+                int(row["reboundsDefensive"])
+                if pd.notna(row.get("reboundsDefensive"))
+                else 0
+            )
+
+            mins_str = str(row["minutes"]) if pd.notna(row["minutes"]) else "0"
+            try:
+                parts = mins_str.split(":")
+                mins_val = int(parts[0])
+            except (ValueError, IndexError):
+                mins_val = 0
+
+            t_pts += pts
+            t_reb += reb
+            t_ast += ast
+            t_stl += stl
+            t_blk += blk
+            t_tov += tov
+            t_fgm += fgm
+            t_fga += fga
+            t_fg3m += fg3m
+            t_fg3a += fg3a
+            t_ftm += ftm
+            t_fta += fta
+            t_oreb += oreb
+            t_dreb += dreb
+
+            name = f"{row['firstName']} {row['familyName']}"
+            players.append(
+                {
+                    "name": name,
+                    "min": mins_val,
+                    "pts": pts,
+                    "reb": reb,
+                    "ast": ast,
+                    "stl": stl,
+                    "blk": blk,
+                    "tov": tov,
+                    "fg": f"{fgm}/{fga}",
+                    "fg3": f"{fg3m}/{fg3a}",
+                    "ft": f"{ftm}/{fta}",
+                }
+            )
+
+        team_stats = {
+            "team_id": int(tid),
+            "abbr": team_abbr,
+            "city": team_city,
+            "name": team_name,
+            "pts": t_pts,
+            "reb": t_reb,
+            "ast": t_ast,
+            "stl": t_stl,
+            "blk": t_blk,
+            "tov": t_tov,
+            "oreb": t_oreb,
+            "dreb": t_dreb,
+            "fg": f"{t_fgm}/{t_fga}",
+            "fg_pct": round(t_fgm / t_fga * 100, 1) if t_fga > 0 else 0,
+            "fg3": f"{t_fg3m}/{t_fg3a}",
+            "fg3_pct": round(t_fg3m / t_fg3a * 100, 1) if t_fg3a > 0 else 0,
+            "ft": f"{t_ftm}/{t_fta}",
+            "ft_pct": round(t_ftm / t_fta * 100, 1) if t_fta > 0 else 0,
+        }
+
+        # Destaques: líder pts, reb, ast + stl/blk >= 2
+        players_sorted_pts = sorted(players, key=lambda x: x["pts"], reverse=True)
+        players_sorted_reb = sorted(players, key=lambda x: x["reb"], reverse=True)
+        players_sorted_ast = sorted(players, key=lambda x: x["ast"], reverse=True)
+
+        highlights = []
+        if players_sorted_pts:
+            p = players_sorted_pts[0]
+            highlights.append(f"🏀 {p['name']}: {p['pts']} pts")
+        if players_sorted_reb:
+            p = players_sorted_reb[0]
+            highlights.append(f"💪 {p['name']}: {p['reb']} reb")
+        if players_sorted_ast:
+            p = players_sorted_ast[0]
+            highlights.append(f"🎯 {p['name']}: {p['ast']} ast")
+        for p in players:
+            if p["stl"] >= 2:
+                highlights.append(f"🖐️ {p['name']}: {p['stl']} stl")
+            if p["blk"] >= 2:
+                highlights.append(f"🚫 {p['name']}: {p['blk']} blk")
+
+        team_stats["highlights"] = highlights
+        result["teams"].append(team_stats)
+        result["players"][team_abbr] = players
+
+    return result
 
 
 def fetch_h2h_player_stats(game_ids: list[str], team_id: int) -> list[dict]:
@@ -1089,11 +1241,12 @@ def force_update():
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO games
-                    (team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
+                    (game_id, team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
                      stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
+                        g["game_id"],
                         abbr,
                         g["date"],
                         g["matchup"],
