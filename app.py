@@ -1025,31 +1025,77 @@ def page_comparison(all_teams: dict):
         game_ids = [g["game_id"] for g in h2h_games]
 
         col_a, col_b = st.columns(2)
+
+        # Carregar médias da temporada para comparação
+        all_players = load_all_players()
+        season_avg = {}
+        for p in all_players:
+            season_avg[p["player_name"]] = p
+
+        def _color_h2h(ps_list):
+            """Retorna DataFrame estilizado comparando h2h vs temporada."""
+            df = pd.DataFrame(ps_list)
+            df.columns = [
+                "Jogador",
+                "J",
+                "Min",
+                "Pts",
+                "Reb",
+                "Ast",
+                "Stl",
+                "Blk",
+                "Tov",
+                "FG",
+                "FG%",
+                "3P",
+                "3P%",
+                "FT",
+                "FT%",
+                "+/−",
+            ]
+            # Mapas: coluna display -> (chave h2h, chave season, lower_is_better)
+            compare_map = {
+                "Pts": ("pts", "pts", False),
+                "Reb": ("reb", "reb", False),
+                "Ast": ("ast", "ast", False),
+                "Stl": ("stl", "stl", False),
+                "Blk": ("blk", "blk", False),
+                "Tov": ("tov", "tov", True),
+                "FG%": ("fg_pct", "fg_pct", False),
+                "3P%": ("fg3_pct", "fg3_pct", False),
+                "FT%": ("ft_pct", "ft_pct", False),
+            }
+
+            def _style_row(row):
+                jogador = row["Jogador"]
+                savg = season_avg.get(jogador, {})
+                styles = [""] * len(row)
+                for i, col in enumerate(row.index):
+                    if col not in compare_map or not savg:
+                        continue
+                    h2h_key, season_key, lower = compare_map[col]
+                    h2h_val = (
+                        ps_list[row.name][h2h_key] if row.name < len(ps_list) else None
+                    )
+                    s_val = savg.get(season_key)
+                    if h2h_val is None or s_val is None:
+                        continue
+                    if lower:
+                        color = "#2e7d32" if h2h_val <= s_val else "#c62828"
+                    else:
+                        color = "#2e7d32" if h2h_val >= s_val else "#c62828"
+                    styles[i] = f"color: {color}; font-weight: 600"
+                return styles
+
+            return df.style.apply(_style_row, axis=1)
+
         with col_a:
             st.markdown(f"**{ta['nickname']}** — Médias nos confrontos")
             ps_a = fetch_h2h_player_stats(game_ids, ta["id"])
             if ps_a:
-                df_ps_a = pd.DataFrame(ps_a)
-                df_ps_a.columns = [
-                    "Jogador",
-                    "J",
-                    "Min",
-                    "Pts",
-                    "Reb",
-                    "Ast",
-                    "Stl",
-                    "Blk",
-                    "Tov",
-                    "FG",
-                    "FG%",
-                    "3P",
-                    "3P%",
-                    "FT",
-                    "FT%",
-                    "+/−",
-                ]
+                styled_a = _color_h2h(ps_a)
                 sel_a = st.dataframe(
-                    df_ps_a,
+                    styled_a,
                     use_container_width=True,
                     hide_index=True,
                     on_select="rerun",
@@ -1063,27 +1109,9 @@ def page_comparison(all_teams: dict):
             st.markdown(f"**{tb['nickname']}** — Médias nos confrontos")
             ps_b = fetch_h2h_player_stats(game_ids, tb["id"])
             if ps_b:
-                df_ps_b = pd.DataFrame(ps_b)
-                df_ps_b.columns = [
-                    "Jogador",
-                    "J",
-                    "Min",
-                    "Pts",
-                    "Reb",
-                    "Ast",
-                    "Stl",
-                    "Blk",
-                    "Tov",
-                    "FG",
-                    "FG%",
-                    "3P",
-                    "3P%",
-                    "FT",
-                    "FT%",
-                    "+/−",
-                ]
+                styled_b = _color_h2h(ps_b)
                 sel_b = st.dataframe(
-                    df_ps_b,
+                    styled_b,
                     use_container_width=True,
                     hide_index=True,
                     on_select="rerun",
