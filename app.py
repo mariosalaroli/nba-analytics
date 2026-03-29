@@ -50,28 +50,11 @@ header[data-testid="stHeader"] { display: none !important; }
 #MainMenu, footer { display: none !important; }
 .block-container { padding: 1rem 2rem 2rem; max-width: 1400px; }
 
-/* Sidebar — forçar sempre visível */
+/* Sidebar */
 section[data-testid="stSidebar"],
 section[data-testid="stSidebar"] > div,
 [data-testid="stSidebar"] {
     background: #0d0d0d;
-    display: flex !important;
-    flex-direction: column !important;
-    width: 336px !important;
-    min-width: 336px !important;
-    transform: none !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    left: 0 !important;
-    margin-left: 0 !important;
-}
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapseButton"],
-button[kind="header"] {
-    display: none !important;
-}
-[data-testid="stAppViewBlockContainer"] {
-    margin-left: 336px !important;
 }
 section[data-testid="stSidebar"] * { color: #ccc !important; }
 section[data-testid="stSidebar"] .stSelectbox label,
