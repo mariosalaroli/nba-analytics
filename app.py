@@ -46,12 +46,10 @@ st.markdown(
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
 header[data-testid="stHeader"] {
-    background: transparent !important;
-    border-bottom: none !important;
-    z-index: 999 !important;
-    pointer-events: auto !important;
+    background: rgba(255,255,255,0) !important;
+    backdrop-filter: none !important;
 }
-#MainMenu, footer, header [data-testid="stToolbar"] { display: none !important; }
+#MainMenu, footer, [data-testid="stToolbar"] { display: none !important; }
 .block-container { padding: 1rem 2rem 2rem; max-width: 1400px; }
 
 /* Sidebar */
