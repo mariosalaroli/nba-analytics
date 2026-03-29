@@ -18,6 +18,8 @@ from nba_data import (
     load_players_list,
     load_player_stats,
     fetch_player_game_log,
+    save_player_games_to_db,
+    load_player_game_log,
     fetch_head_to_head,
     fetch_h2h_player_stats,
     fetch_game_details,
@@ -163,6 +165,8 @@ def load_cache() -> dict:
         save_to_db(conn)
         status.write("Buscando dados dos jogadores...")
         save_players_to_db(conn)
+        status.write("Buscando game logs dos jogadores...")
+        save_player_games_to_db(conn, progress_cb=lambda msg: status.write(msg))
         status.update(label="✅ Dados carregados!", state="complete")
     season = load_season(conn)
     teams = load_all_teams(conn)
@@ -1628,7 +1632,13 @@ def _get_players_list():
 
 @st.cache_data(ttl=300)
 def _get_player_game_log(player_id: int):
-    return fetch_player_game_log(player_id, n=10)
+    conn = get_connection()
+    games = load_player_game_log(conn, player_id)
+    conn.close()
+    if not games:
+        # Fallback: se BD vazio, buscar da API
+        return fetch_player_game_log(player_id, n=10)
+    return games
 
 
 def page_players():
@@ -1812,12 +1822,25 @@ def page_players():
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
     # ── Gráficos de tendência (últimos 10 jogos) ──
-    all_games_rev = list(reversed(game_log))
-    dates = [g["date"] for g in all_games_rev]
+    last10 = game_log[:10]
+    last10_rev = list(reversed(last10))
+    dates = [g["date"] for g in last10_rev]
 
-    def trend_chart(values, title, avg_val, season_avg):
+    # Medianas da temporada (todos os jogos)
+    from statistics import median
+
+    season_med = {
+        "pts": median([g["pts"] for g in game_log]),
+        "reb": median([g["reb"] for g in game_log]),
+        "ast": median([g["ast"] for g in game_log]),
+        "fg3m": median([g["fg3m"] for g in game_log]),
+        "stl": median([g["stl"] for g in game_log]),
+        "blk": median([g["blk"] for g in game_log]),
+    }
+
+    def trend_chart(values, title, avg_val, season_med_val):
         fig, ax = plt.subplots(figsize=(6, 2.8))
-        palette = ["#2e7d32" if v >= season_avg else "#c62828" for v in values]
+        palette = ["#2e7d32" if v >= season_med_val else "#c62828" for v in values]
         bars = ax.bar(
             range(len(values)),
             values,
@@ -1841,14 +1864,14 @@ def page_players():
             )
 
         ax.axhline(
-            season_avg,
+            season_med_val,
             color="#1565C0",
             linewidth=2,
             linestyle="--",
             zorder=4,
-            label=f"μ: {season_avg}",
+            label=f"Md: {season_med_val}",
         )
-        if avg_val != season_avg:
+        if avg_val != season_med_val:
             ax.axhline(
                 avg_val,
                 color="#E65100",
@@ -1888,44 +1911,44 @@ def page_players():
 
     tc1, tc2 = st.columns(2)
     with tc1:
-        pts_vals = [g["pts"] for g in all_games_rev]
+        pts_vals = [g["pts"] for g in last10_rev]
         avg5_pts = round(sum(g["pts"] for g in last5) / max(len(last5), 1), 1)
         st.pyplot(
-            trend_chart(pts_vals, "Pontos", avg5_pts, pstats["pts"]),
+            trend_chart(pts_vals, "Pontos", avg5_pts, season_med["pts"]),
         )
     with tc2:
-        reb_vals = [g["reb"] for g in all_games_rev]
+        reb_vals = [g["reb"] for g in last10_rev]
         avg5_reb = round(sum(g["reb"] for g in last5) / max(len(last5), 1), 1)
         st.pyplot(
-            trend_chart(reb_vals, "Rebotes", avg5_reb, pstats["reb"]),
+            trend_chart(reb_vals, "Rebotes", avg5_reb, season_med["reb"]),
         )
 
     tc3, tc4 = st.columns(2)
     with tc3:
-        ast_vals = [g["ast"] for g in all_games_rev]
+        ast_vals = [g["ast"] for g in last10_rev]
         avg5_ast = round(sum(g["ast"] for g in last5) / max(len(last5), 1), 1)
         st.pyplot(
-            trend_chart(ast_vals, "Assistências", avg5_ast, pstats["ast"]),
+            trend_chart(ast_vals, "Assistências", avg5_ast, season_med["ast"]),
         )
     with tc4:
-        fg3_vals = [g["fg3m"] for g in all_games_rev]
+        fg3_vals = [g["fg3m"] for g in last10_rev]
         avg5_fg3 = round(sum(g["fg3m"] for g in last5) / max(len(last5), 1), 1)
         st.pyplot(
-            trend_chart(fg3_vals, "Bolas de 3", avg5_fg3, pstats["fg3m"]),
+            trend_chart(fg3_vals, "Bolas de 3", avg5_fg3, season_med["fg3m"]),
         )
 
     tc5, tc6 = st.columns(2)
     with tc5:
-        stl_vals = [g["stl"] for g in all_games_rev]
+        stl_vals = [g["stl"] for g in last10_rev]
         avg5_stl = round(sum(g["stl"] for g in last5) / max(len(last5), 1), 1)
         st.pyplot(
-            trend_chart(stl_vals, "Roubos", avg5_stl, pstats["stl"]),
+            trend_chart(stl_vals, "Roubos", avg5_stl, season_med["stl"]),
         )
     with tc6:
-        blk_vals = [g["blk"] for g in all_games_rev]
+        blk_vals = [g["blk"] for g in last10_rev]
         avg5_blk = round(sum(g["blk"] for g in last5) / max(len(last5), 1), 1)
         st.pyplot(
-            trend_chart(blk_vals, "Bloqueios", avg5_blk, pstats["blk"]),
+            trend_chart(blk_vals, "Bloqueios", avg5_blk, season_med["blk"]),
         )
 
     # ── Tabela geral de jogadores ──

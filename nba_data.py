@@ -146,6 +146,33 @@ def init_db(conn: sqlite3.Connection):
             ft_pct    REAL,
             UNIQUE(team_abbr, date, matchup)
         );
+        CREATE TABLE IF NOT EXISTS player_games (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id   INTEGER,
+            date        TEXT,
+            matchup     TEXT,
+            wl          TEXT,
+            min         INTEGER,
+            pts         INTEGER,
+            ast         INTEGER,
+            reb         INTEGER,
+            oreb        INTEGER,
+            dreb        INTEGER,
+            stl         INTEGER,
+            blk         INTEGER,
+            tov         INTEGER,
+            fg3m        INTEGER,
+            fg3a        INTEGER,
+            fgm         INTEGER,
+            fga         INTEGER,
+            fg_pct      REAL,
+            fg3_pct     REAL,
+            ftm         INTEGER,
+            fta         INTEGER,
+            ft_pct      REAL,
+            plus_minus  INTEGER,
+            UNIQUE(player_id, date, matchup)
+        );
         CREATE TABLE IF NOT EXISTS players (
             player_id      INTEGER PRIMARY KEY,
             player_name    TEXT,
@@ -660,6 +687,113 @@ def save_players_to_db(conn: sqlite3.Connection):
 
     conn.commit()
     print(f"  {count} jogadores salvos na tabela 'players'")
+
+
+def save_player_games_to_db(conn: sqlite3.Connection, progress_cb=None):
+    """Busca game log completo da temporada para todos os jogadores e grava no BD."""
+    rows = conn.execute(
+        "SELECT player_id, player_name FROM players WHERE gp > 0"
+    ).fetchall()
+    total = len(rows)
+    if progress_cb:
+        progress_cb(f"Baixando game logs de {total} jogadores...")
+    else:
+        print(f"Baixando game logs de {total} jogadores...")
+
+    conn.execute("DELETE FROM player_games")
+
+    count = 0
+    for i, r in enumerate(rows, 1):
+        pid = r["player_id"]
+        name = r["player_name"]
+        if progress_cb and i % 25 == 0:
+            progress_cb(f"  Game logs [{i}/{total}] {name}...")
+        elif not progress_cb and i % 50 == 0:
+            print(f"  [{i}/{total}] {name}...")
+
+        try:
+            time.sleep(SLEEP)
+            log = PlayerGameLog(
+                player_id=pid,
+                season=SEASON,
+                season_type_all_star="Regular Season",
+                timeout=API_TIMEOUT,
+            )
+            df = log.get_data_frames()[0]
+
+            for _, row in df.iterrows():
+                conn.execute(
+                    """INSERT OR IGNORE INTO player_games
+                    (player_id, date, matchup, wl, min, pts, ast, reb, oreb, dreb,
+                     stl, blk, tov, fg3m, fg3a, fgm, fga, fg_pct, fg3_pct,
+                     ftm, fta, ft_pct, plus_minus)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        pid,
+                        str(row["GAME_DATE"]),
+                        str(row["MATCHUP"]),
+                        str(row["WL"]),
+                        int(row["MIN"]) if pd.notna(row["MIN"]) else 0,
+                        int(row["PTS"]),
+                        int(row["AST"]),
+                        int(row["REB"]),
+                        int(row["OREB"]),
+                        int(row["DREB"]),
+                        int(row["STL"]),
+                        int(row["BLK"]),
+                        int(row["TOV"]),
+                        int(row["FG3M"]),
+                        int(row["FG3A"]),
+                        int(row["FGM"]),
+                        int(row["FGA"]),
+                        (
+                            round(float(row["FG_PCT"]) * 100, 1)
+                            if pd.notna(row["FG_PCT"])
+                            else 0
+                        ),
+                        (
+                            round(float(row["FG3_PCT"]) * 100, 1)
+                            if pd.notna(row["FG3_PCT"])
+                            else 0
+                        ),
+                        int(row["FTM"]),
+                        int(row["FTA"]),
+                        (
+                            round(float(row["FT_PCT"]) * 100, 1)
+                            if pd.notna(row["FT_PCT"])
+                            else 0
+                        ),
+                        int(row["PLUS_MINUS"]) if pd.notna(row["PLUS_MINUS"]) else 0,
+                    ),
+                )
+            count += 1
+        except Exception as e:
+            msg = f"⚠️ Erro game log {name}: {e}"
+            if progress_cb:
+                progress_cb(msg)
+            else:
+                print(msg)
+
+        if i % 25 == 0:
+            conn.commit()
+
+    conn.commit()
+    msg = f"  {count}/{total} jogadores — game logs salvos"
+    if progress_cb:
+        progress_cb(msg)
+    else:
+        print(msg)
+
+
+def load_player_game_log(
+    conn: sqlite3.Connection, player_id: int, n: int = 0
+) -> list[dict]:
+    """Carrega game log de um jogador do BD. n=0 retorna todos."""
+    query = "SELECT * FROM player_games WHERE player_id = ? ORDER BY date DESC"
+    if n > 0:
+        query += f" LIMIT {n}"
+    rows = conn.execute(query, (player_id,)).fetchall()
+    return [dict(r) for r in rows]
 
 
 def get_connection() -> sqlite3.Connection:
@@ -1368,6 +1502,12 @@ def force_update():
     yield "Baixando dados de jogadores (base)..."
     save_players_to_db(conn)
 
+    yield "Baixando game logs dos jogadores..."
+    msgs = []
+    save_player_games_to_db(conn, progress_cb=lambda msg: msgs.append(msg))
+    for m in msgs:
+        yield m
+
     yield "✅ Atualização concluída!"
     conn.close()
 
@@ -1392,4 +1532,5 @@ if __name__ == "__main__":
     conn = get_connection()
     save_to_db(conn)
     save_players_to_db(conn)
+    save_player_games_to_db(conn)
     conn.close()
