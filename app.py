@@ -893,32 +893,6 @@ def page_games(team: dict):
     wins10 = sum(1 for g in games_10 if g["wl"] == "W")
     wins5 = sum(1 for g in games_5 if g["wl"] == "W")
 
-    st.markdown(
-        '<div class="section-header">Momento atual</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("**Últimos 10 jogos**")
-    a, b, c, d, e = st.columns(5)
-    a.metric("Recorde", f"{wins10}-{len(games_10) - wins10}")
-    b.metric("Pts/j", avg10["pts"], delta=_delta(avg10["pts"], "pts"))
-    c.metric("Reb/j", avg10["reb"], delta=_delta(avg10["reb"], "reb"))
-    d.metric("Ast/j", avg10["ast"], delta=_delta(avg10["ast"], "ast"))
-    e.metric("FG%", f"{avg10['fg_pct']}%", delta=_delta(avg10["fg_pct"], "fg_pct"))
-
-    st.markdown("**Últimos 5 jogos**")
-    a, b, c, d, e = st.columns(5)
-    a.metric("Recorde", f"{wins5}-{len(games_5) - wins5}")
-    b.metric("Pts/j", avg5["pts"], delta=_delta(avg5["pts"], "pts"))
-    c.metric("Reb/j", avg5["reb"], delta=_delta(avg5["reb"], "reb"))
-    d.metric("Ast/j", avg5["ast"], delta=_delta(avg5["ast"], "ast"))
-    e.metric("FG%", f"{avg5['fg_pct']}%", delta=_delta(avg5["fg_pct"], "fg_pct"))
-
-    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-
-    # ── Gráficos lado a lado ──
-    chart_left, chart_right = st.columns(2)
-
     # Buscar pontos do adversário
     opp_pts_map = {}
     game_ids = [g.get("game_id") for g in games_10 if g.get("game_id")]
@@ -932,6 +906,62 @@ def page_games(team: dict):
             if row:
                 opp_pts_map[gid] = row["pts"]
         conn_g.close()
+
+    def _avg_opp(games):
+        vals = [
+            opp_pts_map[g["game_id"]] for g in games if g.get("game_id") in opp_pts_map
+        ]
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    avg_opp10 = _avg_opp(games_10)
+    avg_opp5 = _avg_opp(games_5)
+
+    def _delta_inv(avg, season_key):
+        """Delta invertido: menor é melhor (pontos sofridos)."""
+        sv = team.get(season_key)
+        if sv is None or avg is None:
+            return ""
+        d = round(avg - sv, 1)
+        sign = "+" if d >= 0 else ""
+        return f"{sign}{d}"
+
+    st.markdown(
+        '<div class="section-header">Momento atual</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("**Últimos 10 jogos**")
+    a, b, c, d, e, f = st.columns(6)
+    a.metric("Recorde", f"{wins10}-{len(games_10) - wins10}")
+    b.metric("Pts/j", avg10["pts"], delta=_delta(avg10["pts"], "pts"))
+    c.metric(
+        "Pts sofridos/j",
+        avg_opp10 or "—",
+        delta=_delta_inv(avg_opp10, "opp_pts"),
+        delta_color="inverse",
+    )
+    d.metric("Reb/j", avg10["reb"], delta=_delta(avg10["reb"], "reb"))
+    e.metric("Ast/j", avg10["ast"], delta=_delta(avg10["ast"], "ast"))
+    f.metric("FG%", f"{avg10['fg_pct']}%", delta=_delta(avg10["fg_pct"], "fg_pct"))
+
+    st.markdown("**Últimos 5 jogos**")
+    a, b, c, d, e, f = st.columns(6)
+    a.metric("Recorde", f"{wins5}-{len(games_5) - wins5}")
+    b.metric("Pts/j", avg5["pts"], delta=_delta(avg5["pts"], "pts"))
+    c.metric(
+        "Pts sofridos/j",
+        avg_opp5 or "—",
+        delta=_delta_inv(avg_opp5, "opp_pts"),
+        delta_color="inverse",
+    )
+    d.metric("Reb/j", avg5["reb"], delta=_delta(avg5["reb"], "reb"))
+    e.metric("Ast/j", avg5["ast"], delta=_delta(avg5["ast"], "ast"))
+    f.metric("FG%", f"{avg5['fg_pct']}%", delta=_delta(avg5["fg_pct"], "fg_pct"))
+
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+    # ── Gráficos lado a lado ──
+    chart_left, chart_right = st.columns(2)
 
     with chart_left:
         st.markdown(
