@@ -973,27 +973,31 @@ def page_games(team: dict):
             )
         )
         # Linhas de média da temporada
+        _fg_season = team.get("fg_pct", 0)
         fig_eff.add_hline(
-            y=team.get("fg_pct", 0),
+            y=_fg_season,
             line_dash="dash",
             line_color=color,
             opacity=0.4,
-            annotation_text="FG% temp.",
-            annotation_position="top left",
+            annotation_text=f"x̄ {_fg_season}%",
+            annotation_position="right",
             annotation_font_size=9,
+            annotation_font_color=color,
         )
+        _3p_season = team.get("fg3_pct", 0)
         fig_eff.add_hline(
-            y=team.get("fg3_pct", 0),
+            y=_3p_season,
             line_dash="dash",
             line_color="#FF9800",
             opacity=0.4,
-            annotation_text="3P% temp.",
-            annotation_position="bottom left",
+            annotation_text=f"x̄ {_3p_season}%",
+            annotation_position="right",
             annotation_font_size=9,
+            annotation_font_color="#FF9800",
         )
         fig_eff.update_layout(
             height=260,
-            margin=dict(l=0, r=0, t=10, b=30),
+            margin=dict(l=0, r=50, t=10, b=30),
             plot_bgcolor="white",
             paper_bgcolor="white",
             xaxis=dict(
