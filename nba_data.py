@@ -953,67 +953,75 @@ def fetch_game_details(game_id: str) -> dict:
                 }
         conn_hl.close()
 
-        player_highlights = {}  # name -> list of stat strings
+        player_highlights = {}  # name -> set of stat keys
 
         # Líder em pontos
         top_pts = sorted(players, key=lambda x: x["pts"], reverse=True)
         if top_pts:
-            p = top_pts[0]
-            player_highlights.setdefault(p["name"], []).append(f"{p['pts']} pts")
+            player_highlights.setdefault(top_pts[0]["name"], set()).add("pts")
 
         # Líder em rebotes
         top_reb = sorted(players, key=lambda x: x["reb"], reverse=True)
         if top_reb:
-            p = top_reb[0]
-            player_highlights.setdefault(p["name"], []).append(f"{p['reb']} reb")
+            player_highlights.setdefault(top_reb[0]["name"], set()).add("reb")
 
         # Líder em assistências
         top_ast = sorted(players, key=lambda x: x["ast"], reverse=True)
         if top_ast:
-            p = top_ast[0]
-            player_highlights.setdefault(p["name"], []).append(f"{p['ast']} ast")
+            player_highlights.setdefault(top_ast[0]["name"], set()).add("ast")
 
         # Jogadores com stl >= 2, blk >= 2, ou boas bolas de 3
         for p in players:
-            extras = []
+            name = p["name"]
             fg3m_game = p.get("fg3m", 0)
-            savg_pre = season_avgs.get(p["name"], {})
-            if fg3m_game >= 3 or (
-                fg3m_game >= 2 and fg3m_game > savg_pre.get("fg3m", 0)
-            ):
-                if f"{fg3m_game} 3PM" not in player_highlights.get(p["name"], []):
-                    extras.append(f"{fg3m_game} 3PM")
+            savg = season_avgs.get(name, {})
+
+            has_extra = False
+            if fg3m_game >= 3 or (fg3m_game >= 2 and fg3m_game > savg.get("fg3m", 0)):
+                player_highlights.setdefault(name, set()).add("3pm")
+                has_extra = True
             if p["stl"] >= 2:
-                extras.append(f"{p['stl']} stl")
+                player_highlights.setdefault(name, set()).add("stl")
+                has_extra = True
             if p["blk"] >= 2:
-                extras.append(f"{p['blk']} blk")
-            if extras:
-                savg = season_avgs.get(p["name"], {})
-                # Adicionar pts/reb se acima da média da temporada
+                player_highlights.setdefault(name, set()).add("blk")
+                has_extra = True
+            # Para jogadores com extras, adicionar pts/reb se acima da média
+            if has_extra:
                 if savg and p["pts"] > savg.get("pts", 0):
-                    if f"{p['pts']} pts" not in player_highlights.get(p["name"], []):
-                        extras.insert(0, f"{p['pts']} pts")
+                    player_highlights[name].add("pts")
                 if savg and p["reb"] > savg.get("reb", 0):
-                    if f"{p['reb']} reb" not in player_highlights.get(p["name"], []):
-                        extras.insert(
-                            0 if not any("pts" in e for e in extras) else 1,
-                            f"{p['reb']} reb",
-                        )
-                for e in extras:
-                    if e not in player_highlights.get(p["name"], []):
-                        player_highlights.setdefault(p["name"], []).append(e)
+                    player_highlights[name].add("reb")
 
         # Para todo jogador com destaque, garantir pts >= 20 e reb >= 5
+        # Ordem fixa: pts, reb, ast, stl, blk, 3PM
+        stat_order = ["pts", "reb", "ast", "stl", "blk", "3pm"]
         highlights = []
-        for name, stats in player_highlights.items():
+        for name, stat_keys in player_highlights.items():
             p_data = next((p for p in players if p["name"] == name), None)
-            if p_data:
-                if p_data["pts"] >= 20 and not any("pts" in s for s in stats):
-                    stats.insert(0, f"{p_data['pts']} pts")
-                if p_data["reb"] >= 5 and not any("reb" in s for s in stats):
-                    idx = 1 if any("pts" in s for s in stats) else 0
-                    stats.insert(idx, f"{p_data['reb']} reb")
-            highlights.append(f"**{name}**: {', '.join(stats)}")
+            if not p_data:
+                continue
+            if p_data["pts"] >= 20:
+                stat_keys.add("pts")
+            if p_data["reb"] >= 5:
+                stat_keys.add("reb")
+            parts = []
+            for key in stat_order:
+                if key not in stat_keys:
+                    continue
+                if key == "pts":
+                    parts.append(f"{p_data['pts']} pts")
+                elif key == "reb":
+                    parts.append(f"{p_data['reb']} reb")
+                elif key == "ast":
+                    parts.append(f"{p_data['ast']} ast")
+                elif key == "stl":
+                    parts.append(f"{p_data['stl']} stl")
+                elif key == "blk":
+                    parts.append(f"{p_data['blk']} blk")
+                elif key == "3pm":
+                    parts.append(f"{p_data.get('fg3m', 0)} 3PM")
+            highlights.append(f"**{name}**: {', '.join(parts)}")
 
         team_stats["highlights"] = highlights
         result["teams"].append(team_stats)
