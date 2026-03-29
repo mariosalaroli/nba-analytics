@@ -49,12 +49,19 @@ header[data-testid="stHeader"] { display: none !important; }
 #MainMenu, footer { display: none !important; }
 .block-container { padding: 1rem 2rem 2rem; max-width: 1400px; }
 
-/* Sidebar */
+/* Sidebar — sempre visível, sem botão de fechar */
 section[data-testid="stSidebar"] {
     background: #0d0d0d;
-    transform: none !important;
-    visibility: visible !important;
-    position: relative !important;
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    width: 320px !important;
+}
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
 }
 section[data-testid="stSidebar"] * { color: #ccc !important; }
 section[data-testid="stSidebar"] .stSelectbox label,
