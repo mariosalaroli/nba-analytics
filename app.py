@@ -870,10 +870,6 @@ def page_games(team: dict):
     d.metric("Ast/j", avg5["ast"], delta=_delta(avg5["ast"], "ast"))
     e.metric("FG%", f"{avg5['fg_pct']}%", delta=_delta(avg5["fg_pct"], "fg_pct"))
 
-    st.caption(
-        f"Sequência atual: **{streak_label}** · Deltas comparados à média da temporada"
-    )
-
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
     # ── Gráficos lado a lado ──
