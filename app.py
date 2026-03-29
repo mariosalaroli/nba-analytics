@@ -949,11 +949,11 @@ def page_games(team: dict):
             hl2 = _hl_html(t2.get("highlights", []), c2_color, "left")
             st.markdown(
                 f"<div style='display:flex;max-width:700px;margin:16px auto 0;gap:12px;font-size:14px;'>"
-                f"<div style='flex:1;text-align:left;'>"
+                f"<div style='flex:1;text-align:center;'>"
                 f"<div style='font-weight:700;color:{c1_color};margin-bottom:6px;font-size:15px;'>{t1['abbr']} — Destaques</div>"
                 f"{hl1}</div>"
                 f"<div style='width:1px;background:#e0e0e0;'></div>"
-                f"<div style='flex:1;text-align:left;'>"
+                f"<div style='flex:1;text-align:center;'>"
                 f"<div style='font-weight:700;color:{c2_color};margin-bottom:6px;font-size:15px;'>{t2['abbr']} — Destaques</div>"
                 f"{hl2}</div>"
                 f"</div>",
