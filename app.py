@@ -1701,7 +1701,7 @@ def page_players():
 
     # ── Últimos jogos ──
     st.markdown(
-        '<div class="section-header">Últimos jogos — linhas de aposta</div>',
+        '<div class="section-header">Últimos jogos</div>',
         unsafe_allow_html=True,
     )
 
