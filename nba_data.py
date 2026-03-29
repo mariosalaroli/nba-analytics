@@ -909,6 +909,7 @@ def fetch_game_details(game_id: str) -> dict:
                     "blk": blk,
                     "tov": tov,
                     "fg": f"{fgm}/{fga}",
+                    "fg3m": fg3m,
                     "fg3": f"{fg3m}/{fg3a}",
                     "ft": f"{ftm}/{fta}",
                 }
@@ -941,13 +942,14 @@ def fetch_game_details(game_id: str) -> dict:
         season_avgs = {}
         for p in players:
             row_avg = conn_hl.execute(
-                "SELECT pts, reb FROM players WHERE player_name = ?",
+                "SELECT pts, reb, fg3m FROM players WHERE player_name = ?",
                 (p["name"],),
             ).fetchone()
             if row_avg:
                 season_avgs[p["name"]] = {
                     "pts": float(row_avg["pts"]) if row_avg["pts"] else 0,
                     "reb": float(row_avg["reb"]) if row_avg["reb"] else 0,
+                    "fg3m": float(row_avg["fg3m"]) if row_avg["fg3m"] else 0,
                 }
         conn_hl.close()
 
@@ -971,9 +973,16 @@ def fetch_game_details(game_id: str) -> dict:
             p = top_ast[0]
             player_highlights.setdefault(p["name"], []).append(f"{p['ast']} ast")
 
-        # Jogadores com stl >= 2 ou blk >= 2
+        # Jogadores com stl >= 2, blk >= 2, ou boas bolas de 3
         for p in players:
             extras = []
+            fg3m_game = p.get("fg3m", 0)
+            savg_pre = season_avgs.get(p["name"], {})
+            if fg3m_game >= 3 or (
+                fg3m_game >= 2 and fg3m_game > savg_pre.get("fg3m", 0)
+            ):
+                if f"{fg3m_game} 3PM" not in player_highlights.get(p["name"], []):
+                    extras.append(f"{fg3m_game} 3PM")
             if p["stl"] >= 2:
                 extras.append(f"{p['stl']} stl")
             if p["blk"] >= 2:
