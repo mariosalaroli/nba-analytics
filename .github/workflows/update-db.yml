@@ -2,7 +2,7 @@ name: Atualizar banco NBA
 
 on:
   schedule:
-    - cron: '0 12 * * *'  # Todo dia às 12:00 UTC (09:00 BRT)
+    - cron: '0 7 * * *'  # Todo dia às 07:00 UTC (04:00 BRT)
   workflow_dispatch:        # Permite rodar manualmente pelo GitHub
 
 jobs:
