@@ -555,7 +555,7 @@ def page_overview(team: dict, all_teams: dict):
     color = get_team_color(team["abbreviation"])
 
     # Header do time
-    streak_html = render_streak_chips(team["last_games"][:7])
+    streak_html = render_streak_chips(team["last_games"][:10])
 
     st.markdown(
         f"""
@@ -616,14 +616,14 @@ def page_overview(team: dict, all_teams: dict):
 
     with col_right:
         st.markdown(
-            '<div class="section-header">Últimos 7 jogos</div>', unsafe_allow_html=True
+            '<div class="section-header">Últimos 10 jogos</div>', unsafe_allow_html=True
         )
         st.markdown(
             f"<div style='margin:8px 0 12px;'>{streak_html}</div>",
             unsafe_allow_html=True,
         )
         games_data = []
-        for g in team["last_games"][:7]:
+        for g in team["last_games"][:10]:
             games_data.append(
                 {
                     "Data": g["date"],
