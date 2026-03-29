@@ -45,11 +45,8 @@ st.markdown(
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
-header[data-testid="stHeader"] {
-    background: transparent !important;
-    border: none !important;
-}
 [data-testid="stToolbar"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
 #MainMenu, footer { display: none !important; }
 .block-container { padding: 1rem 2rem 2rem; max-width: 1400px; }
 
