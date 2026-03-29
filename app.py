@@ -1454,19 +1454,11 @@ def page_comparison(all_teams: dict):
             f"&nbsp;&nbsp;({len(h2h_games)} jogo{'s' if len(h2h_games) > 1 else ''})"
         )
 
-        # Buscar pontos do adversário nos confrontos
+        # Buscar pontos do adversário nos confrontos (via API do time B)
         opp_h2h = {}
-        h2h_gids = [g["game_id"] for g in h2h_games if g.get("game_id")]
-        if h2h_gids:
-            conn_h = get_connection()
-            for gid in h2h_gids:
-                row = conn_h.execute(
-                    "SELECT pts FROM games WHERE game_id = ? AND team_abbr != ?",
-                    (gid, ta["abbreviation"]),
-                ).fetchone()
-                if row:
-                    opp_h2h[gid] = row["pts"]
-            conn_h.close()
+        h2h_opp = fetch_head_to_head(tb["id"], a)
+        for g_opp in h2h_opp:
+            opp_h2h[g_opp["game_id"]] = g_opp["pts"]
 
         h2h_rows = []
         for g in h2h_games:
