@@ -1087,7 +1087,22 @@ def page_comparison(all_teams: dict):
                     styles[i] = f"color: {color}; font-weight: 600"
                 return styles
 
-            return df.style.apply(_style_row, axis=1)
+            return df.style.apply(_style_row, axis=1).format(
+                {
+                    "J": "{:.0f}",
+                    "Min": "{:.1f}",
+                    "Pts": "{:.1f}",
+                    "Reb": "{:.1f}",
+                    "Ast": "{:.1f}",
+                    "Stl": "{:.1f}",
+                    "Blk": "{:.1f}",
+                    "Tov": "{:.1f}",
+                    "FG%": "{:.1f}",
+                    "3P%": "{:.1f}",
+                    "FT%": "{:.1f}",
+                    "+/−": "{:.0f}",
+                }
+            )
 
         with col_a:
             st.markdown(f"**{ta['nickname']}** — Médias nos confrontos")
