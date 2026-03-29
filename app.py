@@ -813,25 +813,71 @@ def page_stats(team: dict, all_teams: dict):
 
 
 def page_games(team: dict):
-    st.markdown(
-        '<div class="section-header">Pontuação nos últimos 10 jogos</div>',
-        unsafe_allow_html=True,
-    )
+    games_10 = team["last_games"][:10]
     color = get_team_color(team["abbreviation"])
-    st.plotly_chart(
-        last_games_chart(team["last_games"], color),
-        use_container_width=True,
-        config={"displayModeBar": False},
+
+    # ── Resumo do momento ──
+    wins = sum(1 for g in games_10 if g["wl"] == "W")
+    losses = len(games_10) - wins
+
+    # Sequência atual
+    streak_type = games_10[0]["wl"] if games_10 else ""
+    streak_count = 0
+    for g in games_10:
+        if g["wl"] == streak_type:
+            streak_count += 1
+        else:
+            break
+    streak_label = f"{'V' if streak_type == 'W' else 'D'}{streak_count}"
+    streak_color = "#2e7d32" if streak_type == "W" else "#c62828"
+
+    # Médias últimos 10
+    avg_pts = (
+        round(sum(g["pts"] for g in games_10) / len(games_10), 1) if games_10 else 0
     )
+    avg_reb = (
+        round(sum(g["reb"] for g in games_10) / len(games_10), 1) if games_10 else 0
+    )
+    avg_ast = (
+        round(sum(g["ast"] for g in games_10) / len(games_10), 1) if games_10 else 0
+    )
+    avg_fg = (
+        round(sum(g["fg_pct"] for g in games_10) / len(games_10), 1) if games_10 else 0
+    )
+    avg_3p = (
+        round(sum(g.get("fg3_pct", 0) for g in games_10) / len(games_10), 1)
+        if games_10
+        else 0
+    )
+
+    # Deltas vs temporada
+    def _delta(avg, season_key):
+        sv = team.get(season_key)
+        if sv is None:
+            return ""
+        d = round(avg - sv, 1)
+        return f"{'+' if d >= 0 else ''}{d}"
 
     st.markdown(
-        '<div class="section-header">Detalhes das partidas</div>',
-        unsafe_allow_html=True,
+        '<div class="section-header">Momento atual</div>', unsafe_allow_html=True
     )
 
-    # Buscar pontos do adversário para cada jogo via game_id
-    game_ids = [g.get("game_id") for g in team["last_games"][:10] if g.get("game_id")]
+    m1, m2, m3, m4, m5, m6 = st.columns(6)
+    m1.metric("Últimos 10", f"{wins}-{losses}")
+    m2.metric("Sequência", streak_label)
+    m3.metric("Pts/j", avg_pts, delta=_delta(avg_pts, "pts"))
+    m4.metric("Reb/j", avg_reb, delta=_delta(avg_reb, "reb"))
+    m5.metric("Ast/j", avg_ast, delta=_delta(avg_ast, "ast"))
+    m6.metric("FG%", f"{avg_fg}%", delta=_delta(avg_fg, "fg_pct"))
+
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+    # ── Gráficos lado a lado ──
+    chart_left, chart_right = st.columns(2)
+
+    # Buscar pontos do adversário
     opp_pts_map = {}
+    game_ids = [g.get("game_id") for g in games_10 if g.get("game_id")]
     if game_ids:
         conn_g = get_connection()
         for gid in game_ids:
@@ -843,7 +889,138 @@ def page_games(team: dict):
                 opp_pts_map[gid] = row["pts"]
         conn_g.close()
 
-    for i, g in enumerate(team["last_games"][:10]):
+    with chart_left:
+        st.markdown(
+            '<div class="section-header">Pontos: time vs adversário</div>',
+            unsafe_allow_html=True,
+        )
+        df_pts = pd.DataFrame(games_10[::-1])
+        df_pts["opp_pts"] = [
+            opp_pts_map.get(g.get("game_id"), None) for g in games_10[::-1]
+        ]
+        df_pts["jogo"] = df_pts["matchup"].str.replace(r"^[A-Z]+ ", "", regex=True)
+        df_pts["cor"] = df_pts["wl"].map({"W": "#2e7d32", "L": "#c62828"})
+
+        fig_pts = go.Figure()
+        fig_pts.add_trace(
+            go.Bar(
+                x=list(range(len(df_pts))),
+                y=df_pts["pts"],
+                marker_color=color,
+                text=df_pts["pts"],
+                textposition="inside",
+                textfont=dict(size=10, family="DM Mono", color="white"),
+                name=team["abbreviation"],
+            )
+        )
+        fig_pts.add_trace(
+            go.Bar(
+                x=list(range(len(df_pts))),
+                y=df_pts["opp_pts"],
+                marker_color="#bdbdbd",
+                text=df_pts["opp_pts"],
+                textposition="inside",
+                textfont=dict(size=10, family="DM Mono", color="white"),
+                name="Adversário",
+            )
+        )
+        fig_pts.update_layout(
+            barmode="group",
+            height=260,
+            margin=dict(l=0, r=0, t=10, b=30),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                tickvals=list(range(len(df_pts))),
+                ticktext=df_pts["jogo"].tolist(),
+                tickfont=dict(size=9, family="DM Mono"),
+            ),
+            yaxis=dict(showgrid=True, gridcolor="#f0f0f0", showticklabels=False),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+            showlegend=True,
+        )
+        st.plotly_chart(
+            fig_pts, use_container_width=True, config={"displayModeBar": False}
+        )
+
+    with chart_right:
+        st.markdown(
+            '<div class="section-header">Eficiência nos últimos jogos</div>',
+            unsafe_allow_html=True,
+        )
+        df_eff = pd.DataFrame(games_10[::-1])
+        df_eff["jogo"] = df_eff["matchup"].str.replace(r"^[A-Z]+ ", "", regex=True)
+
+        fig_eff = go.Figure()
+        fig_eff.add_trace(
+            go.Scatter(
+                x=list(range(len(df_eff))),
+                y=df_eff["fg_pct"],
+                mode="lines+markers",
+                name="FG%",
+                line=dict(color=color, width=2),
+                marker=dict(size=6),
+            )
+        )
+        fig_eff.add_trace(
+            go.Scatter(
+                x=list(range(len(df_eff))),
+                y=df_eff["fg3_pct"],
+                mode="lines+markers",
+                name="3P%",
+                line=dict(color="#FF9800", width=2),
+                marker=dict(size=6),
+            )
+        )
+        # Linhas de média da temporada
+        fig_eff.add_hline(
+            y=team.get("fg_pct", 0),
+            line_dash="dash",
+            line_color=color,
+            opacity=0.4,
+            annotation_text="FG% temp.",
+            annotation_position="top left",
+            annotation_font_size=9,
+        )
+        fig_eff.add_hline(
+            y=team.get("fg3_pct", 0),
+            line_dash="dash",
+            line_color="#FF9800",
+            opacity=0.4,
+            annotation_text="3P% temp.",
+            annotation_position="bottom left",
+            annotation_font_size=9,
+        )
+        fig_eff.update_layout(
+            height=260,
+            margin=dict(l=0, r=0, t=10, b=30),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                tickvals=list(range(len(df_eff))),
+                ticktext=df_eff["jogo"].tolist(),
+                tickfont=dict(size=9, family="DM Mono"),
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="#f0f0f0",
+                tickfont=dict(size=10),
+                ticksuffix="%",
+            ),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+            showlegend=True,
+        )
+        st.plotly_chart(
+            fig_eff, use_container_width=True, config={"displayModeBar": False}
+        )
+
+    # ── Detalhes das partidas ──
+    st.markdown(
+        '<div class="section-header">Detalhes das partidas</div>',
+        unsafe_allow_html=True,
+    )
+
+    for i, g in enumerate(games_10):
         game_id = g.get("game_id")
         icon = "✅" if g["wl"] == "W" else "❌"
         opp_pts = opp_pts_map.get(game_id)
