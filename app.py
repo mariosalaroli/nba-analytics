@@ -902,11 +902,15 @@ def page_games(team: dict):
             for lbl, key in zip(stat_labels, stat_keys):
                 v1 = t1[key]
                 v2 = t2[key]
-                # Destacar quem ganhou a stat (bold)
+                # Destacar quem ganhou a stat (bold) — TOV: menor é melhor
                 try:
                     n1, n2 = float(v1), float(v2)
-                    w1 = "font-weight:700;" if n1 > n2 else ""
-                    w2 = "font-weight:700;" if n2 > n1 else ""
+                    if key == "tov":
+                        w1 = "font-weight:700;" if n1 < n2 else ""
+                        w2 = "font-weight:700;" if n2 < n1 else ""
+                    else:
+                        w1 = "font-weight:700;" if n1 > n2 else ""
+                        w2 = "font-weight:700;" if n2 > n1 else ""
                 except (ValueError, TypeError):
                     w1 = w2 = ""
                 rows_html += (
