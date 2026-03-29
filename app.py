@@ -859,7 +859,8 @@ def page_games(team: dict):
         return f"{'+' if d >= 0 else ''}{d}"
 
     st.markdown(
-        '<div class="section-header">Momento atual</div>', unsafe_allow_html=True
+        '<div class="section-header">Momento atual — últimos 10 jogos</div>',
+        unsafe_allow_html=True,
     )
 
     m1, m2, m3, m4, m5, m6 = st.columns(6)
