@@ -393,7 +393,7 @@ def stat_bar_chart(
         xaxis=dict(
             showgrid=True, gridcolor="#f0f0f0", zeroline=False, showticklabels=False
         ),
-        yaxis=dict(tickfont=dict(size=11, family="DM Mono")),
+        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), automargin=True),
         showlegend=False,
     )
     return fig
