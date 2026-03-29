@@ -427,12 +427,18 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
         mn, mx = min(vals), max(vals)
         return [(v - mn) / (mx - mn + 1e-9) * 10 for v in vals]
 
+    # Stats onde menor é melhor (inverter normalização)
+    invert = {"def_rating"}
+
     team_vals = []
     for key in stats_keys:
         all_vals = [t[key] for t in all_teams.values()]
         mn, mx = min(all_vals), max(all_vals)
         v = team[key]
-        team_vals.append((v - mn) / (mx - mn + 1e-9) * 10)
+        norm = (v - mn) / (mx - mn + 1e-9) * 10
+        if key in invert:
+            norm = 10 - norm
+        team_vals.append(norm)
 
     color = get_team_color(team["abbreviation"])
     # Convert hex color to rgba for fillcolor (Plotly doesn't support 8-char hex)
