@@ -32,7 +32,7 @@ from nba_data import (
 
 # ─── Configuração da página ───────────────────────────────────────────────────
 st.set_page_config(
-    page_title="NBA Stats",
+    page_title="NBA - Analytics",
     page_icon="🏀",
     layout="wide",
     initial_sidebar_state="expanded",
