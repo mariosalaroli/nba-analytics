@@ -862,52 +862,50 @@ def page_games(team: dict):
                 unsafe_allow_html=True,
             )
 
-            # Stats comparativas dos times
+            # Stats comparativas dos times — tabela espelhada
             stat_labels = [
-                "PTS",
-                "REB",
-                "AST",
-                "STL",
-                "BLK",
-                "TOV",
-                "OREB",
-                "DREB",
-                "FG",
-                "FG%",
-                "3P",
-                "3P%",
-                "FT",
-                "FT%",
+                "PTS", "REB", "AST", "STL", "BLK", "TOV",
+                "OREB", "DREB", "FG", "FG%", "3P", "3P%", "FT", "FT%",
             ]
             stat_keys = [
-                "pts",
-                "reb",
-                "ast",
-                "stl",
-                "blk",
-                "tov",
-                "oreb",
-                "dreb",
-                "fg",
-                "fg_pct",
-                "fg3",
-                "fg3_pct",
-                "ft",
-                "ft_pct",
+                "pts", "reb", "ast", "stl", "blk", "tov",
+                "oreb", "dreb", "fg", "fg_pct", "fg3", "fg3_pct", "ft", "ft_pct",
             ]
-            comp_rows = []
+            c1_color = get_team_color(t1["abbr"])
+            c2_color = get_team_color(t2["abbr"])
+
+            rows_html = ""
             for lbl, key in zip(stat_labels, stat_keys):
                 v1 = t1[key]
                 v2 = t2[key]
-                comp_rows.append(
-                    {
-                        t1["abbr"]: v1,
-                        "Stat": lbl,
-                        t2["abbr"]: v2,
-                    }
+                # Destacar quem ganhou a stat (bold)
+                try:
+                    n1, n2 = float(v1), float(v2)
+                    w1 = "font-weight:700;" if n1 > n2 else ""
+                    w2 = "font-weight:700;" if n2 > n1 else ""
+                except (ValueError, TypeError):
+                    w1 = w2 = ""
+                rows_html += (
+                    f"<tr>"
+                    f"<td style='text-align:right;padding:4px 12px;{w1}'>{v1}</td>"
+                    f"<td style='text-align:center;padding:4px 8px;font-weight:600;"
+                    f"color:#555;font-size:11px;background:#f8f8f8;'>{lbl}</td>"
+                    f"<td style='text-align:left;padding:4px 12px;{w2}'>{v2}</td>"
+                    f"</tr>"
                 )
-            df_comp = pd.DataFrame(comp_rows)
-            st.dataframe(df_comp, use_container_width=True, hide_index=True)
+
+            st.markdown(
+                f"<table style='width:100%;max-width:500px;margin:0 auto;"
+                f"border-collapse:collapse;font-family:DM Mono,monospace;font-size:14px;'>"
+                f"<thead><tr>"
+                f"<th style='text-align:right;padding:6px 12px;color:{c1_color};font-size:13px;'>{t1['abbr']}</th>"
+                f"<th style='text-align:center;padding:6px 8px;'></th>"
+                f"<th style='text-align:left;padding:6px 12px;color:{c2_color};font-size:13px;'>{t2['abbr']}</th>"
+                f"</tr></thead>"
+                f"<tbody>{rows_html}</tbody>"
+                f"</table>",
+                unsafe_allow_html=True,
+            )
 
             # Destaques
             dc1, dc2 = st.columns(2)
