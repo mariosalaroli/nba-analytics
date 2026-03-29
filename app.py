@@ -556,6 +556,15 @@ def page_overview(team: dict, all_teams: dict):
 
     # Header do time
     streak_html = render_streak_chips(team["last_games"][:10])
+    _conf_pt = "Leste" if team["conference"] == "East" else "Oeste"
+    _div_pt = {
+        "Central": "Central",
+        "Atlantic": "Atlântico",
+        "Southeast": "Sudeste",
+        "Northwest": "Noroeste",
+        "Pacific": "Pacífico",
+        "Southwest": "Sudoeste",
+    }.get(team["division"], team["division"])
 
     st.markdown(
         f"""
@@ -567,7 +576,7 @@ def page_overview(team: dict, all_teams: dict):
         </div>
         <div>
             <div style="font-size:22px;font-weight:600;color:#111;line-height:1.1;">{team["name"]}</div>
-            <div style="font-size:12px;color:#888;">{team["conference"]}ern Conference · {team["division"]} Division · #{team["conf_rank"]}</div>
+            <div style="font-size:12px;color:#888;">Conferência {_conf_pt} · Divisão {_div_pt} · #{team["conf_rank"]}</div>
         </div>
         <div style="margin-left:auto;text-align:right;">
             <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:#111;">
