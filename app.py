@@ -979,7 +979,7 @@ def page_games(team: dict):
             line_dash="dash",
             line_color=color,
             opacity=0.4,
-            annotation_text=f"x̄ {_fg_season}%",
+            annotation_text=f"μ {_fg_season}%",
             annotation_position="right",
             annotation_font_size=9,
             annotation_font_color=color,
@@ -990,7 +990,7 @@ def page_games(team: dict):
             line_dash="dash",
             line_color="#FF9800",
             opacity=0.4,
-            annotation_text=f"x̄ {_3p_season}%",
+            annotation_text=f"μ {_3p_season}%",
             annotation_position="right",
             annotation_font_size=9,
             annotation_font_color="#FF9800",
@@ -1710,7 +1710,7 @@ def page_players():
             linewidth=2,
             linestyle="--",
             zorder=4,
-            label=f"x̄: {season_avg}",
+            label=f"μ: {season_avg}",
         )
         if avg_val != season_avg:
             ax.axhline(
