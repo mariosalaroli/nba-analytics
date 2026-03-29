@@ -120,6 +120,18 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] { font-size: 1
 .diff-pos { color: #2e7d32; font-weight: 600; font-family: 'DM Mono', monospace; }
 .diff-neg { color: #c62828; font-weight: 600; font-family: 'DM Mono', monospace; }
 
+/* Botão atualizar dados na sidebar */
+section[data-testid="stSidebar"] button[kind="secondary"] {
+    background-color: #1565C0 !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+}
+section[data-testid="stSidebar"] button[kind="secondary"]:hover {
+    background-color: #0D47A1 !important;
+}
+
 /* Hide stale content on page switch, show only spinner */
 [data-stale="true"] {
     opacity: 0 !important;
