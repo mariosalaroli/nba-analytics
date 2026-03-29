@@ -1104,6 +1104,14 @@ def page_comparison(all_teams: dict):
                 }
             )
 
+        st.markdown(
+            '<div style="font-size:12px;color:#888;margin-bottom:8px;">'
+            '🟢 <span style="color:#2e7d32;font-weight:600;">Verde</span> = acima ou igual à média da temporada &nbsp;&nbsp; '
+            '🔴 <span style="color:#c62828;font-weight:600;">Vermelho</span> = abaixo da média da temporada'
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
         with col_a:
             st.markdown(f"**{ta['nickname']}** — Médias nos confrontos")
             ps_a = fetch_h2h_player_stats(game_ids, ta["id"])
