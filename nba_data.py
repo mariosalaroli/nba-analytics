@@ -690,7 +690,7 @@ def save_players_to_db(conn: sqlite3.Connection):
 
 
 def save_player_games_to_db(conn: sqlite3.Connection):
-    """Busca game log completo da temporada para todos os jogadores e grava no BD.
+    """Busca os últimos 10 jogos de cada jogador e grava no BD.
 
     É um gerador: faz yield de mensagens de progresso.
     Quando chamado fora de um contexto de gerador, use:
@@ -700,7 +700,7 @@ def save_player_games_to_db(conn: sqlite3.Connection):
         "SELECT player_id, player_name FROM players WHERE gp > 0"
     ).fetchall()
     total = len(rows)
-    yield f"Baixando game logs de {total} jogadores..."
+    yield f"Baixando últimos jogos de {total} jogadores..."
 
     conn.execute("DELETE FROM player_games")
 
@@ -719,7 +719,7 @@ def save_player_games_to_db(conn: sqlite3.Connection):
                 season_type_all_star="Regular Season",
                 timeout=API_TIMEOUT,
             )
-            df = log.get_data_frames()[0]
+            df = log.get_data_frames()[0].head(10)
 
             for _, row in df.iterrows():
                 conn.execute(
