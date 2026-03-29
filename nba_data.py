@@ -310,6 +310,7 @@ def fetch_opponent_stats() -> dict:
     result = {}
     for _, row in df.iterrows():
         result[int(row["TEAM_ID"])] = {
+            "opp_pts": round(float(row["OPP_PTS"]), 1),
             "opp_fgm": round(float(row["OPP_FGM"]), 1),
             "opp_fga": round(float(row["OPP_FGA"]), 1),
             "opp_fg_pct": round(float(row["OPP_FG_PCT"]) * 100, 1),
