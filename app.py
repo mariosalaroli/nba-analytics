@@ -445,6 +445,20 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
     r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
     fill_rgba = f"rgba({r},{g},{b},0.2)"
 
+    # Cores por categoria: ofensivo vs defensivo
+    off_color = "#1565C0"  # azul
+    def_color = "#C62828"  # vermelho
+    # Ordem: ast(off), off_rating(off), pts(off), reb(def), def_rating(def), blk(def), stl(def)
+    label_colors = [
+        off_color,
+        off_color,
+        off_color,
+        def_color,
+        def_color,
+        def_color,
+        def_color,
+    ]
+
     fig = go.Figure(
         go.Scatterpolar(
             r=team_vals + [team_vals[0]],
@@ -464,13 +478,20 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
                 gridcolor="#eee",
                 showline=False,
             ),
-            angularaxis=dict(tickfont=dict(size=12, family="DM Sans")),
+            angularaxis=dict(
+                tickfont=dict(size=13, family="DM Sans", weight="bold"),
+                tickvals=labels,
+                ticktext=[
+                    f"<span style='color:{c}'>{l}</span>"
+                    for l, c in zip(labels, label_colors)
+                ],
+            ),
             bgcolor="white",
             gridshape="circular",
         ),
         showlegend=False,
-        height=300,
-        margin=dict(l=40, r=40, t=20, b=20),
+        height=380,
+        margin=dict(l=50, r=50, t=30, b=30),
         paper_bgcolor="white",
     )
     return fig
