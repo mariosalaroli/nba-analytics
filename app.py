@@ -375,10 +375,11 @@ def stat_bar_chart(
             orientation="h",
             marker_color=colors,
             text=top[label],
-            textposition="outside",
-            textfont=dict(size=10, family="DM Mono", color="#333"),
+            textposition="inside",
+            textfont=dict(size=10, family="DM Mono", color="white"),
+            insidetextanchor="end",
             textangle=0,
-            cliponaxis=False,
+            constraintext="none",
         )
     )
     fig.update_layout(
