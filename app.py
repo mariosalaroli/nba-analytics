@@ -120,6 +120,13 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] { font-size: 1
 .diff-pos { color: #2e7d32; font-weight: 600; font-family: 'DM Mono', monospace; }
 .diff-neg { color: #c62828; font-weight: 600; font-family: 'DM Mono', monospace; }
 
+/* Seta para abrir sidebar no mobile */
+button[data-testid="stSidebarCollapsedControl"] {
+    color: #333 !important;
+    background-color: #f0f0f0 !important;
+    border-radius: 50% !important;
+}
+
 /* Botão atualizar dados na sidebar */
 section[data-testid="stSidebar"] button[kind="secondary"] {
     background-color: #1565C0 !important;
