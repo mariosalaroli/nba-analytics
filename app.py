@@ -573,7 +573,7 @@ def page_overview(team: dict, all_teams: dict):
             <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:#111;">
                 {team["w"]}-{team["l"]}
             </div>
-            <div style="font-size:12px;color:#888;">{team["pct"]:.3f} · #{team["conf_rank"]} {team["conference"]}</div>
+            <div style="font-size:12px;color:#888;">%V {team["pct"]:.3f} · #{team["conf_rank"]} {team["conference"]}</div>
             <div style="font-size:12px;color:#666;margin-top:4px;">
                 🏠 {team["home_record"]} · ✈️ {team["road_record"]} · 📅 L10: {team["last10"]}
             </div>
