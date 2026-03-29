@@ -864,12 +864,36 @@ def page_games(team: dict):
 
             # Stats comparativas dos times — tabela espelhada
             stat_labels = [
-                "PTS", "REB", "AST", "STL", "BLK", "TOV",
-                "OREB", "DREB", "FG", "FG%", "3P", "3P%", "FT", "FT%",
+                "PTS",
+                "REB",
+                "AST",
+                "STL",
+                "BLK",
+                "TOV",
+                "OREB",
+                "DREB",
+                "FG",
+                "FG%",
+                "3P",
+                "3P%",
+                "FT",
+                "FT%",
             ]
             stat_keys = [
-                "pts", "reb", "ast", "stl", "blk", "tov",
-                "oreb", "dreb", "fg", "fg_pct", "fg3", "fg3_pct", "ft", "ft_pct",
+                "pts",
+                "reb",
+                "ast",
+                "stl",
+                "blk",
+                "tov",
+                "oreb",
+                "dreb",
+                "fg",
+                "fg_pct",
+                "fg3",
+                "fg3_pct",
+                "ft",
+                "ft_pct",
             ]
             c1_color = get_team_color(t1["abbr"])
             c2_color = get_team_color(t2["abbr"])
@@ -907,16 +931,21 @@ def page_games(team: dict):
                 unsafe_allow_html=True,
             )
 
-            # Destaques
-            dc1, dc2 = st.columns(2)
-            with dc1:
-                st.markdown(f"**{t1['abbr']} — Destaques**")
-                for h in t1.get("highlights", []):
-                    st.markdown(h)
-            with dc2:
-                st.markdown(f"**{t2['abbr']} — Destaques**")
-                for h in t2.get("highlights", []):
-                    st.markdown(h)
+            # Destaques — espelhado como a tabela
+            hl1 = "".join(f"<div>{h}</div>" for h in t1.get("highlights", []))
+            hl2 = "".join(f"<div>{h}</div>" for h in t2.get("highlights", []))
+            st.markdown(
+                f"<div style='display:flex;max-width:500px;margin:16px auto 0;gap:8px;font-size:13px;'>"
+                f"<div style='flex:1;text-align:right;'>"
+                f"<div style='font-weight:700;color:{c1_color};margin-bottom:4px;'>{t1['abbr']} — Destaques</div>"
+                f"{hl1}</div>"
+                f"<div style='width:1px;background:#e0e0e0;'></div>"
+                f"<div style='flex:1;text-align:left;'>"
+                f"<div style='font-weight:700;color:{c2_color};margin-bottom:4px;'>{t2['abbr']} — Destaques</div>"
+                f"{hl2}</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
 
 def _go_to_player(player_name: str):
