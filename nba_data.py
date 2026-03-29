@@ -1021,7 +1021,7 @@ def fetch_game_details(game_id: str) -> dict:
                     parts.append(f"{p_data['blk']} blk")
                 elif key == "3pm":
                     parts.append(f"{p_data.get('fg3m', 0)} 3PM")
-            highlights.append(f"**{name}**: {', '.join(parts)}")
+            highlights.append({"name": name, "stats": ", ".join(parts)})
 
         team_stats["highlights"] = highlights
         result["teams"].append(team_stats)

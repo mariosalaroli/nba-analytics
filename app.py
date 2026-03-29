@@ -919,7 +919,7 @@ def page_games(team: dict):
                 )
 
             st.markdown(
-                f"<table style='width:100%;max-width:500px;margin:0 auto;"
+                f"<table style='width:100%;max-width:700px;margin:0 auto;"
                 f"border-collapse:collapse;font-family:DM Mono,monospace;font-size:14px;'>"
                 f"<thead><tr>"
                 f"<th style='text-align:right;padding:6px 12px;color:{c1_color};font-size:13px;'>{t1['abbr']}</th>"
@@ -932,16 +932,29 @@ def page_games(team: dict):
             )
 
             # Destaques — espelhado como a tabela
-            hl1 = "".join(f"<div>{h}</div>" for h in t1.get("highlights", []))
-            hl2 = "".join(f"<div>{h}</div>" for h in t2.get("highlights", []))
+            def _hl_html(highlights, color, align):
+                html = ""
+                for h in highlights:
+                    if isinstance(h, dict):
+                        html += (
+                            f"<div style='margin:3px 0;'>"
+                            f"<span style='font-weight:700;color:{color};'>{h['name']}</span>: "
+                            f"{h['stats']}</div>"
+                        )
+                    else:
+                        html += f"<div style='margin:3px 0;'>{h}</div>"
+                return html
+
+            hl1 = _hl_html(t1.get("highlights", []), c1_color, "right")
+            hl2 = _hl_html(t2.get("highlights", []), c2_color, "left")
             st.markdown(
-                f"<div style='display:flex;max-width:500px;margin:16px auto 0;gap:8px;font-size:13px;'>"
+                f"<div style='display:flex;max-width:700px;margin:16px auto 0;gap:12px;font-size:14px;'>"
                 f"<div style='flex:1;text-align:right;'>"
-                f"<div style='font-weight:700;color:{c1_color};margin-bottom:4px;'>{t1['abbr']} — Destaques</div>"
+                f"<div style='font-weight:700;color:{c1_color};margin-bottom:6px;font-size:15px;'>{t1['abbr']} — Destaques</div>"
                 f"{hl1}</div>"
                 f"<div style='width:1px;background:#e0e0e0;'></div>"
                 f"<div style='flex:1;text-align:left;'>"
-                f"<div style='font-weight:700;color:{c2_color};margin-bottom:4px;'>{t2['abbr']} — Destaques</div>"
+                f"<div style='font-weight:700;color:{c2_color};margin-bottom:6px;font-size:15px;'>{t2['abbr']} — Destaques</div>"
                 f"{hl2}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
