@@ -45,19 +45,17 @@ st.markdown(
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
-header[data-testid="stHeader"] { display: none !important; }
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    border: none !important;
+}
+[data-testid="stToolbar"] { display: none !important; }
 #MainMenu, footer { display: none !important; }
 .block-container { padding: 1rem 2rem 2rem; max-width: 1400px; }
 
-/* Sidebar sempre visível */
+/* Sidebar */
 section[data-testid="stSidebar"] {
     background: #0d0d0d;
-    transform: none !important;
-    min-width: 320px !important;
-    width: 320px !important;
-}
-section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {
-    display: none !important;
 }
 section[data-testid="stSidebar"] * { color: #ccc !important; }
 section[data-testid="stSidebar"] .stSelectbox label,
