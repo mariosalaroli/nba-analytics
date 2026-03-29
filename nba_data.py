@@ -6,7 +6,7 @@ Atualiza automaticamente no primeiro uso de cada dia.
 import time
 import sqlite3
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from nba_api.stats.static import teams as nba_teams_static
 from nba_api.stats.endpoints import (
@@ -527,7 +527,7 @@ def save_to_db(conn: sqlite3.Connection):
         except Exception as e:
             print(f"ERRO: {e}")
 
-    now = datetime.now().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO meta (key, value) VALUES ('last_update', ?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -1335,7 +1335,7 @@ def force_update():
         except Exception as e:
             yield f"⚠️ Erro em {abbr}: {e}"
 
-    now = datetime.now().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     conn.execute(
         "INSERT INTO meta (key, value) VALUES ('last_update', ?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
