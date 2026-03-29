@@ -382,7 +382,7 @@ def stat_bar_chart(
     )
     fig.update_layout(
         height=max(200, len(top) * 28),
-        margin=dict(l=0, r=40, t=10, b=10),
+        margin=dict(l=70, r=40, t=10, b=10),
         plot_bgcolor="white",
         paper_bgcolor="white",
         xaxis=dict(
