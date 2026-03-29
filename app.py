@@ -413,22 +413,22 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
     # 4 ofensivas na meia-lua superior, 4 defensivas na inferior
     stats_keys = [
         "ast",
-        "off_rating",
         "fg_pct",
+        "off_rating",
         "pts",
         "reb",
-        "def_rating",
         "blk",
+        "def_rating",
         "stl",
     ]
     labels = [
         "Assist.",
-        "Off Rtg",
         "FG%",
+        "Off Rtg",
         "Pontos",
         "Rebotes",
-        "Def Rtg",
         "Bloqueios",
+        "Def Rtg",
         "Roubos",
     ]
 
