@@ -52,6 +52,9 @@ header[data-testid="stHeader"] { display: none !important; }
 /* Sidebar */
 section[data-testid="stSidebar"] {
     background: #0d0d0d;
+    transform: none !important;
+    visibility: visible !important;
+    position: relative !important;
 }
 section[data-testid="stSidebar"] * { color: #ccc !important; }
 section[data-testid="stSidebar"] .stSelectbox label,
