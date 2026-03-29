@@ -935,26 +935,68 @@ def fetch_game_details(game_id: str) -> dict:
             "ft_pct": round(t_ftm / t_fta * 100, 1) if t_fta > 0 else 0,
         }
 
-        # Destaques: líder pts, reb, ast + stl/blk >= 2
-        players_sorted_pts = sorted(players, key=lambda x: x["pts"], reverse=True)
-        players_sorted_reb = sorted(players, key=lambda x: x["reb"], reverse=True)
-        players_sorted_ast = sorted(players, key=lambda x: x["ast"], reverse=True)
+        # Destaques: agrupar por jogador, não repetir nomes
+        # Buscar médias da temporada para jogadores de stl/blk
+        conn_hl = get_connection()
+        season_avgs = {}
+        for p in players:
+            row_avg = conn_hl.execute(
+                "SELECT pts, reb FROM players WHERE player_name = ?",
+                (p["name"],),
+            ).fetchone()
+            if row_avg:
+                season_avgs[p["name"]] = {
+                    "pts": float(row_avg["pts"]) if row_avg["pts"] else 0,
+                    "reb": float(row_avg["reb"]) if row_avg["reb"] else 0,
+                }
+        conn_hl.close()
+
+        player_highlights = {}  # name -> list of stat strings
+
+        # Líder em pontos
+        top_pts = sorted(players, key=lambda x: x["pts"], reverse=True)
+        if top_pts:
+            p = top_pts[0]
+            player_highlights.setdefault(p["name"], []).append(f"{p['pts']} pts")
+
+        # Líder em rebotes
+        top_reb = sorted(players, key=lambda x: x["reb"], reverse=True)
+        if top_reb:
+            p = top_reb[0]
+            player_highlights.setdefault(p["name"], []).append(f"{p['reb']} reb")
+
+        # Líder em assistências
+        top_ast = sorted(players, key=lambda x: x["ast"], reverse=True)
+        if top_ast:
+            p = top_ast[0]
+            player_highlights.setdefault(p["name"], []).append(f"{p['ast']} ast")
+
+        # Jogadores com stl >= 2 ou blk >= 2
+        for p in players:
+            extras = []
+            if p["stl"] >= 2:
+                extras.append(f"{p['stl']} stl")
+            if p["blk"] >= 2:
+                extras.append(f"{p['blk']} blk")
+            if extras:
+                savg = season_avgs.get(p["name"], {})
+                # Adicionar pts/reb se acima da média da temporada
+                if savg and p["pts"] > savg.get("pts", 0):
+                    if f"{p['pts']} pts" not in player_highlights.get(p["name"], []):
+                        extras.insert(0, f"{p['pts']} pts")
+                if savg and p["reb"] > savg.get("reb", 0):
+                    if f"{p['reb']} reb" not in player_highlights.get(p["name"], []):
+                        extras.insert(
+                            0 if not any("pts" in e for e in extras) else 1,
+                            f"{p['reb']} reb",
+                        )
+                for e in extras:
+                    if e not in player_highlights.get(p["name"], []):
+                        player_highlights.setdefault(p["name"], []).append(e)
 
         highlights = []
-        if players_sorted_pts:
-            p = players_sorted_pts[0]
-            highlights.append(f"🏀 {p['name']}: {p['pts']} pts")
-        if players_sorted_reb:
-            p = players_sorted_reb[0]
-            highlights.append(f"💪 {p['name']}: {p['reb']} reb")
-        if players_sorted_ast:
-            p = players_sorted_ast[0]
-            highlights.append(f"🎯 {p['name']}: {p['ast']} ast")
-        for p in players:
-            if p["stl"] >= 2:
-                highlights.append(f"🖐️ {p['name']}: {p['stl']} stl")
-            if p["blk"] >= 2:
-                highlights.append(f"🚫 {p['name']}: {p['blk']} blk")
+        for name, stats in player_highlights.items():
+            highlights.append(f"**{name}**: {', '.join(stats)}")
 
         team_stats["highlights"] = highlights
         result["teams"].append(team_stats)
