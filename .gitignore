@@ -2,6 +2,5 @@ __pycache__/
 *.pyc
 data/nba.db
 nba_cache.json
-.streamlit/
 *.egg-info/
 .env
