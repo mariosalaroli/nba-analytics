@@ -243,6 +243,7 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
             for msg in force_update():
                 status.write(msg)
             status.update(label="✅ Atualização concluída!", state="complete")
+            st.cache_data.clear()
             # Recarrega cache
             from nba_data import get_connection, load_season, load_all_teams
 
