@@ -120,9 +120,9 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] { font-size: 1
 .diff-pos { color: #2e7d32; font-weight: 600; font-family: 'DM Mono', monospace; }
 .diff-neg { color: #c62828; font-weight: 600; font-family: 'DM Mono', monospace; }
 
-/* Remove stale content dimming on page switch */
+/* Hide stale content on page switch, show only spinner */
 [data-stale="true"] {
-    opacity: 1 !important;
+    opacity: 0 !important;
     transition: none !important;
 }
 </style>
