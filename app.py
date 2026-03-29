@@ -120,23 +120,6 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] { font-size: 1
 .diff-pos { color: #2e7d32; font-weight: 600; font-family: 'DM Mono', monospace; }
 .diff-neg { color: #c62828; font-weight: 600; font-family: 'DM Mono', monospace; }
 
-/* Seta para abrir sidebar no mobile */
-button[data-testid="stSidebarCollapsedControl"],
-button[data-testid="collapsedControl"],
-[data-testid="collapsedControl"] {
-    color: #333 !important;
-    background-color: #e0e0e0 !important;
-    border-radius: 50% !important;
-    opacity: 1 !important;
-    z-index: 999 !important;
-}
-button[data-testid="stSidebarCollapsedControl"] svg,
-button[data-testid="collapsedControl"] svg,
-[data-testid="collapsedControl"] svg {
-    fill: #333 !important;
-    stroke: #333 !important;
-}
-
 /* Botão atualizar dados na sidebar */
 section[data-testid="stSidebar"] button[kind="secondary"] {
     background-color: #1565C0 !important;
