@@ -294,13 +294,18 @@ def stat_bar_chart(
     df = pd.DataFrame(list(vals.items()), columns=["Time", label])
     df = df.sort_values(label, ascending=lower_is_better).reset_index(drop=True)
 
-    # Posição real do time selecionado (1-based)
+    # Posição real do time selecionado (1-based, empates = mesma posição)
     abbr_sel = team["abbreviation"]
+    if lower_is_better:
+        df["_rank"] = df[label].rank(method="min", ascending=True).astype(int)
+    else:
+        df["_rank"] = df[label].rank(method="min", ascending=False).astype(int)
     real_rank = (
-        df[df["Time"] == abbr_sel].index[0] + 1
+        df.loc[df["Time"] == abbr_sel, "_rank"].values[0]
         if abbr_sel in df["Time"].values
         else None
     )
+    df = df.drop(columns=["_rank"])
 
     # Top 10 (ou 9 + time selecionado se não estiver no top 10)
     in_top = abbr_sel in df.head(10)["Time"].values
