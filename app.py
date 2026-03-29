@@ -854,25 +854,21 @@ def page_games(team: dict):
         unsafe_allow_html=True,
     )
 
-    col_10, col_5 = st.columns(2)
+    st.markdown("**Últimos 10 jogos**")
+    a, b, c, d, e = st.columns(5)
+    a.metric("Recorde", f"{wins10}-{len(games_10) - wins10}")
+    b.metric("Pts/j", avg10["pts"], delta=_delta(avg10["pts"], "pts"))
+    c.metric("Reb/j", avg10["reb"], delta=_delta(avg10["reb"], "reb"))
+    d.metric("Ast/j", avg10["ast"], delta=_delta(avg10["ast"], "ast"))
+    e.metric("FG%", f"{avg10['fg_pct']}%", delta=_delta(avg10["fg_pct"], "fg_pct"))
 
-    with col_10:
-        st.markdown("**Últimos 10 jogos**")
-        a, b, c, d, e = st.columns(5)
-        a.metric("Recorde", f"{wins10}-{len(games_10) - wins10}")
-        b.metric("Pts/j", avg10["pts"], delta=_delta(avg10["pts"], "pts"))
-        c.metric("Reb/j", avg10["reb"], delta=_delta(avg10["reb"], "reb"))
-        d.metric("Ast/j", avg10["ast"], delta=_delta(avg10["ast"], "ast"))
-        e.metric("FG%", f"{avg10['fg_pct']}%", delta=_delta(avg10["fg_pct"], "fg_pct"))
-
-    with col_5:
-        st.markdown("**Últimos 5 jogos**")
-        a, b, c, d, e = st.columns(5)
-        a.metric("Recorde", f"{wins5}-{len(games_5) - wins5}")
-        b.metric("Pts/j", avg5["pts"], delta=_delta(avg5["pts"], "pts"))
-        c.metric("Reb/j", avg5["reb"], delta=_delta(avg5["reb"], "reb"))
-        d.metric("Ast/j", avg5["ast"], delta=_delta(avg5["ast"], "ast"))
-        e.metric("FG%", f"{avg5['fg_pct']}%", delta=_delta(avg5["fg_pct"], "fg_pct"))
+    st.markdown("**Últimos 5 jogos**")
+    a, b, c, d, e = st.columns(5)
+    a.metric("Recorde", f"{wins5}-{len(games_5) - wins5}")
+    b.metric("Pts/j", avg5["pts"], delta=_delta(avg5["pts"], "pts"))
+    c.metric("Reb/j", avg5["reb"], delta=_delta(avg5["reb"], "reb"))
+    d.metric("Ast/j", avg5["ast"], delta=_delta(avg5["ast"], "ast"))
+    e.metric("FG%", f"{avg5['fg_pct']}%", delta=_delta(avg5["fg_pct"], "fg_pct"))
 
     st.caption(
         f"Sequência atual: **{streak_label}** · Deltas comparados à média da temporada"
