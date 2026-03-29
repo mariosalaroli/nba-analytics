@@ -299,10 +299,13 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
             st.rerun()
         last_upd = get_last_update()
         if last_upd:
-            from datetime import datetime as _dt
+            from datetime import datetime as _dt, timedelta as _td, timezone as _tz
 
             try:
                 dt = _dt.fromisoformat(last_upd)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=_tz.utc)
+                dt = dt.astimezone(_tz(_td(hours=-3)))
                 st.caption(f"Última atualização: {dt.strftime('%d/%m/%Y %H:%M')}")
             except Exception:
                 st.caption(f"Última atualização: {last_upd}")
