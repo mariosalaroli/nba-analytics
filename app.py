@@ -814,11 +814,8 @@ def page_stats(team: dict, all_teams: dict):
 
 def page_games(team: dict):
     games_10 = team["last_games"][:10]
+    games_5 = team["last_games"][:5]
     color = get_team_color(team["abbreviation"])
-
-    # ── Resumo do momento ──
-    wins = sum(1 for g in games_10 if g["wl"] == "W")
-    losses = len(games_10) - wins
 
     # Sequência atual
     streak_type = games_10[0]["wl"] if games_10 else ""
@@ -829,26 +826,6 @@ def page_games(team: dict):
         else:
             break
     streak_label = f"{'V' if streak_type == 'W' else 'D'}{streak_count}"
-    streak_color = "#2e7d32" if streak_type == "W" else "#c62828"
-
-    # Médias últimos 10
-    avg_pts = (
-        round(sum(g["pts"] for g in games_10) / len(games_10), 1) if games_10 else 0
-    )
-    avg_reb = (
-        round(sum(g["reb"] for g in games_10) / len(games_10), 1) if games_10 else 0
-    )
-    avg_ast = (
-        round(sum(g["ast"] for g in games_10) / len(games_10), 1) if games_10 else 0
-    )
-    avg_fg = (
-        round(sum(g["fg_pct"] for g in games_10) / len(games_10), 1) if games_10 else 0
-    )
-    avg_3p = (
-        round(sum(g.get("fg3_pct", 0) for g in games_10) / len(games_10), 1)
-        if games_10
-        else 0
-    )
 
     # Deltas vs temporada
     def _delta(avg, season_key):
@@ -858,18 +835,48 @@ def page_games(team: dict):
         d = round(avg - sv, 1)
         return f"{'+' if d >= 0 else ''}{d}"
 
+    def _avgs(games):
+        n = len(games) if games else 1
+        return {
+            "pts": round(sum(g["pts"] for g in games) / n, 1),
+            "reb": round(sum(g["reb"] for g in games) / n, 1),
+            "ast": round(sum(g["ast"] for g in games) / n, 1),
+            "fg_pct": round(sum(g["fg_pct"] for g in games) / n, 1),
+        }
+
+    avg10 = _avgs(games_10)
+    avg5 = _avgs(games_5)
+    wins10 = sum(1 for g in games_10 if g["wl"] == "W")
+    wins5 = sum(1 for g in games_5 if g["wl"] == "W")
+
     st.markdown(
-        '<div class="section-header">Momento atual — últimos 10 jogos</div>',
+        '<div class="section-header">Momento atual</div>',
         unsafe_allow_html=True,
     )
 
-    m1, m2, m3, m4, m5, m6 = st.columns(6)
-    m1.metric("Últimos 10", f"{wins}-{losses}")
-    m2.metric("Sequência", streak_label)
-    m3.metric("Pts/j", avg_pts, delta=_delta(avg_pts, "pts"))
-    m4.metric("Reb/j", avg_reb, delta=_delta(avg_reb, "reb"))
-    m5.metric("Ast/j", avg_ast, delta=_delta(avg_ast, "ast"))
-    m6.metric("FG%", f"{avg_fg}%", delta=_delta(avg_fg, "fg_pct"))
+    col_10, col_5 = st.columns(2)
+
+    with col_10:
+        st.markdown("**Últimos 10 jogos**")
+        a, b, c, d, e = st.columns(5)
+        a.metric("Recorde", f"{wins10}-{len(games_10) - wins10}")
+        b.metric("Pts/j", avg10["pts"], delta=_delta(avg10["pts"], "pts"))
+        c.metric("Reb/j", avg10["reb"], delta=_delta(avg10["reb"], "reb"))
+        d.metric("Ast/j", avg10["ast"], delta=_delta(avg10["ast"], "ast"))
+        e.metric("FG%", f"{avg10['fg_pct']}%", delta=_delta(avg10["fg_pct"], "fg_pct"))
+
+    with col_5:
+        st.markdown("**Últimos 5 jogos**")
+        a, b, c, d, e = st.columns(5)
+        a.metric("Recorde", f"{wins5}-{len(games_5) - wins5}")
+        b.metric("Pts/j", avg5["pts"], delta=_delta(avg5["pts"], "pts"))
+        c.metric("Reb/j", avg5["reb"], delta=_delta(avg5["reb"], "reb"))
+        d.metric("Ast/j", avg5["ast"], delta=_delta(avg5["ast"], "ast"))
+        e.metric("FG%", f"{avg5['fg_pct']}%", delta=_delta(avg5["fg_pct"], "fg_pct"))
+
+    st.caption(
+        f"Sequência atual: **{streak_label}** · Deltas comparados à média da temporada"
+    )
 
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
