@@ -166,7 +166,8 @@ def load_cache() -> dict:
         status.write("Buscando dados dos jogadores...")
         save_players_to_db(conn)
         status.write("Buscando game logs dos jogadores...")
-        save_player_games_to_db(conn, progress_cb=lambda msg: status.write(msg))
+        for msg in save_player_games_to_db(conn):
+            status.write(msg)
         status.update(label="✅ Dados carregados!", state="complete")
     season = load_season(conn)
     teams = load_all_teams(conn)

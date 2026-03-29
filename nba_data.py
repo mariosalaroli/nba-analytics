@@ -689,16 +689,18 @@ def save_players_to_db(conn: sqlite3.Connection):
     print(f"  {count} jogadores salvos na tabela 'players'")
 
 
-def save_player_games_to_db(conn: sqlite3.Connection, progress_cb=None):
-    """Busca game log completo da temporada para todos os jogadores e grava no BD."""
+def save_player_games_to_db(conn: sqlite3.Connection):
+    """Busca game log completo da temporada para todos os jogadores e grava no BD.
+
+    É um gerador: faz yield de mensagens de progresso.
+    Quando chamado fora de um contexto de gerador, use:
+        for _ in save_player_games_to_db(conn): pass
+    """
     rows = conn.execute(
         "SELECT player_id, player_name FROM players WHERE gp > 0"
     ).fetchall()
     total = len(rows)
-    if progress_cb:
-        progress_cb(f"Baixando game logs de {total} jogadores...")
-    else:
-        print(f"Baixando game logs de {total} jogadores...")
+    yield f"Baixando game logs de {total} jogadores..."
 
     conn.execute("DELETE FROM player_games")
 
@@ -706,10 +708,8 @@ def save_player_games_to_db(conn: sqlite3.Connection, progress_cb=None):
     for i, r in enumerate(rows, 1):
         pid = r["player_id"]
         name = r["player_name"]
-        if progress_cb and i % 25 == 0:
-            progress_cb(f"  Game logs [{i}/{total}] {name}...")
-        elif not progress_cb and i % 50 == 0:
-            print(f"  [{i}/{total}] {name}...")
+        if i % 25 == 0:
+            yield f"  Game logs [{i}/{total}] {name}..."
 
         try:
             time.sleep(SLEEP)
@@ -768,21 +768,13 @@ def save_player_games_to_db(conn: sqlite3.Connection, progress_cb=None):
                 )
             count += 1
         except Exception as e:
-            msg = f"⚠️ Erro game log {name}: {e}"
-            if progress_cb:
-                progress_cb(msg)
-            else:
-                print(msg)
+            yield f"⚠️ Erro game log {name}: {e}"
 
         if i % 25 == 0:
             conn.commit()
 
     conn.commit()
-    msg = f"  {count}/{total} jogadores — game logs salvos"
-    if progress_cb:
-        progress_cb(msg)
-    else:
-        print(msg)
+    yield f"  ✅ {count}/{total} jogadores — game logs salvos"
 
 
 def load_player_game_log(
@@ -1502,11 +1494,7 @@ def force_update():
     yield "Baixando dados de jogadores (base)..."
     save_players_to_db(conn)
 
-    yield "Baixando game logs dos jogadores..."
-    msgs = []
-    save_player_games_to_db(conn, progress_cb=lambda msg: msgs.append(msg))
-    for m in msgs:
-        yield m
+    yield from save_player_games_to_db(conn)
 
     yield "✅ Atualização concluída!"
     conn.close()
@@ -1532,5 +1520,6 @@ if __name__ == "__main__":
     conn = get_connection()
     save_to_db(conn)
     save_players_to_db(conn)
-    save_player_games_to_db(conn)
+    for msg in save_player_games_to_db(conn):
+        print(msg)
     conn.close()
