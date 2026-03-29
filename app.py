@@ -278,7 +278,7 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
             st.caption(f"ℹ️ {cache['_note']}")
 
         st.divider()
-        if st.button("🔄 Atualizar dados", width='stretch'):
+        if st.button("🔄 Atualizar dados", width="stretch"):
             status = st.status("📡 Atualizando banco de dados...", expanded=True)
             for msg in force_update():
                 status.write(msg)
@@ -610,7 +610,7 @@ def page_overview(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             radar_chart(team, all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -622,6 +622,20 @@ def page_overview(team: dict, all_teams: dict):
             f"<div style='margin:8px 0 12px;'>{streak_html}</div>",
             unsafe_allow_html=True,
         )
+        # Buscar pontos do adversário
+        opp_map = {}
+        gids = [g.get("game_id") for g in team["last_games"][:10] if g.get("game_id")]
+        if gids:
+            conn_ov = get_connection()
+            for gid in gids:
+                row = conn_ov.execute(
+                    "SELECT pts FROM games WHERE game_id = ? AND team_abbr != ?",
+                    (gid, team["abbreviation"]),
+                ).fetchone()
+                if row:
+                    opp_map[gid] = row["pts"]
+            conn_ov.close()
+
         games_data = []
         for g in team["last_games"][:10]:
             games_data.append(
@@ -630,6 +644,7 @@ def page_overview(team: dict, all_teams: dict):
                     "Jogo": g["matchup"],
                     "W/L": g["wl"],
                     "PTS": g["pts"],
+                    "PTS Sof.": opp_map.get(g.get("game_id"), "—"),
                     "REB": g["reb"],
                     "AST": g["ast"],
                     "STL": g.get("stl", 0),
@@ -642,7 +657,7 @@ def page_overview(team: dict, all_teams: dict):
             )
         if games_data:
             df_games = pd.DataFrame(games_data)
-            st.dataframe(df_games, width='stretch', hide_index=True)
+            st.dataframe(df_games, width="stretch", hide_index=True)
 
 
 def page_stats(team: dict, all_teams: dict):
@@ -659,7 +674,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "pts", "Pontos / jogo", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with c2:
@@ -669,7 +684,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "ast", "Assistências / jogo", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -681,7 +696,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "reb", "Rebotes / jogo", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with c4:
@@ -691,7 +706,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "pts_2nd_chance", "2nd Chance Pts", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -704,7 +719,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "stl", "Roubos / jogo", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with c6:
@@ -714,7 +729,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "blk", "Bloqueios / jogo", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -733,7 +748,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "off_rating", "Off Rating", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with ac2:
@@ -745,7 +760,7 @@ def page_stats(team: dict, all_teams: dict):
             stat_bar_chart(
                 team, "def_rating", "Def Rating", all_teams, lower_is_better=True
             ),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -757,7 +772,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "net_rating", "Net Rating", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with ac4:
@@ -767,7 +782,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "pace", "Pace", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -785,7 +800,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "fg_pct", "FG%", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with sc2:
@@ -795,7 +810,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "fg3_pct", "3P%", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with sc3:
@@ -805,7 +820,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "ft_pct", "FT%", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -829,7 +844,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "fg3a", "3PTA", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with tp2:
@@ -839,7 +854,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "fg3m", "3PTM", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
     with tp3:
@@ -849,7 +864,7 @@ def page_stats(team: dict, all_teams: dict):
         )
         st.plotly_chart(
             stat_bar_chart(team, "fg3_freq", "3P Freq%", all_teams),
-            width='stretch',
+            width="stretch",
             config={"displayModeBar": False},
         )
 
@@ -884,7 +899,7 @@ def page_stats(team: dict, all_teams: dict):
             }
         )
     df = pd.DataFrame(rows).sort_values("W", ascending=False).reset_index(drop=True)
-    st.dataframe(df, width='stretch', hide_index=True)
+    st.dataframe(df, width="stretch", hide_index=True)
 
 
 def page_games(team: dict):
@@ -1044,9 +1059,7 @@ def page_games(team: dict):
             legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
             showlegend=True,
         )
-        st.plotly_chart(
-            fig_pts, width='stretch', config={"displayModeBar": False}
-        )
+        st.plotly_chart(fig_pts, width="stretch", config={"displayModeBar": False})
 
     with chart_right:
         st.markdown(
@@ -1119,9 +1132,7 @@ def page_games(team: dict):
             legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
             showlegend=True,
         )
-        st.plotly_chart(
-            fig_eff, width='stretch', config={"displayModeBar": False}
-        )
+        st.plotly_chart(fig_eff, width="stretch", config={"displayModeBar": False})
 
     # ── Detalhes das partidas ──
     st.markdown(
@@ -1406,7 +1417,7 @@ def page_comparison(all_teams: dict):
         yaxis=dict(showgrid=True, gridcolor="#f5f5f5", showticklabels=False),
         xaxis=dict(tickfont=dict(size=12, family="DM Mono")),
     )
-    st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
     # Tabela resumo
     lower_is_better = {"def_rating", "tov"}
@@ -1426,7 +1437,7 @@ def page_comparison(all_teams: dict):
             }
         )
     df_comp = pd.DataFrame(comp_rows)
-    st.dataframe(df_comp, width='stretch', hide_index=True)
+    st.dataframe(df_comp, width="stretch", hide_index=True)
 
     # Confrontos diretos na temporada
     st.markdown("---")
@@ -1443,6 +1454,20 @@ def page_comparison(all_teams: dict):
             f"&nbsp;&nbsp;({len(h2h_games)} jogo{'s' if len(h2h_games) > 1 else ''})"
         )
 
+        # Buscar pontos do adversário nos confrontos
+        opp_h2h = {}
+        h2h_gids = [g["game_id"] for g in h2h_games if g.get("game_id")]
+        if h2h_gids:
+            conn_h = get_connection()
+            for gid in h2h_gids:
+                row = conn_h.execute(
+                    "SELECT pts FROM games WHERE game_id = ? AND team_abbr != ?",
+                    (gid, ta["abbreviation"]),
+                ).fetchone()
+                if row:
+                    opp_h2h[gid] = row["pts"]
+            conn_h.close()
+
         h2h_rows = []
         for g in h2h_games:
             h2h_rows.append(
@@ -1451,6 +1476,7 @@ def page_comparison(all_teams: dict):
                     "Confronto": g["matchup"],
                     "R": g["wl"],
                     "Pts": g["pts"],
+                    "Pts Sof.": opp_h2h.get(g.get("game_id"), "—"),
                     "Reb": g["reb"],
                     "Ast": g["ast"],
                     "Stl": g["stl"],
@@ -1461,11 +1487,10 @@ def page_comparison(all_teams: dict):
                     "3P%": g["fg3_pct"],
                     "OREB": g["oreb"],
                     "DREB": g["dreb"],
-                    "Erros FG": g["fga"] - g["fgm"],
                 }
             )
         df_h2h = pd.DataFrame(h2h_rows)
-        st.dataframe(df_h2h, width='stretch', hide_index=True)
+        st.dataframe(df_h2h, width="stretch", hide_index=True)
 
         # Estatísticas dos jogadores nos confrontos diretos
         game_ids = [g["game_id"] for g in h2h_games]
@@ -1566,7 +1591,7 @@ def page_comparison(all_teams: dict):
                 styled_a = _color_h2h(ps_a)
                 sel_a = st.dataframe(
                     styled_a,
-                    width='stretch',
+                    width="stretch",
                     hide_index=True,
                     on_select="rerun",
                     selection_mode="single-row",
@@ -1582,7 +1607,7 @@ def page_comparison(all_teams: dict):
                 styled_b = _color_h2h(ps_b)
                 sel_b = st.dataframe(
                     styled_b,
-                    width='stretch',
+                    width="stretch",
                     hide_index=True,
                     on_select="rerun",
                     selection_mode="single-row",
@@ -1755,7 +1780,7 @@ def page_players():
         "+/−",
     ]
     df_display["R"] = df_display["R"].map({"W": "✅ V", "L": "❌ D"})
-    st.dataframe(df_display, width='stretch', hide_index=True)
+    st.dataframe(df_display, width="stretch", hide_index=True)
 
     # Médias dos últimos 5
     if last5:
@@ -1943,7 +1968,7 @@ def page_players():
         return pd.DataFrame(rows)
 
     df_all = _all_players_df()
-    st.dataframe(df_all, width='stretch', hide_index=True, height=600)
+    st.dataframe(df_all, width="stretch", hide_index=True, height=600)
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
