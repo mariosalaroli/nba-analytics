@@ -574,6 +574,9 @@ def page_overview(team: dict, all_teams: dict):
                 {team["w"]}-{team["l"]}
             </div>
             <div style="font-size:12px;color:#888;">{team["pct"]:.3f} · #{team["conf_rank"]} {team["conference"]}</div>
+            <div style="font-size:12px;color:#666;margin-top:4px;">
+                🏠 {team["home_record"]} · ✈️ {team["road_record"]} · 📅 L10: {team["last10"]}
+            </div>
         </div>
     </div>
     """,
@@ -640,12 +643,6 @@ def page_overview(team: dict, all_teams: dict):
         if games_data:
             df_games = pd.DataFrame(games_data)
             st.dataframe(df_games, use_container_width=True, hide_index=True)
-
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        rec_cols = st.columns(3)
-        rec_cols[0].markdown(f"🏠 **Casa**\n\n`{team['home_record']}`")
-        rec_cols[1].markdown(f"✈️ **Fora**\n\n`{team['road_record']}`")
-        rec_cols[2].markdown(f"📅 **Últimos 10**\n\n`{team['last10']}`")
 
 
 def page_stats(team: dict, all_teams: dict):
