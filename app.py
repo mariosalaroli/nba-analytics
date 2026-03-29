@@ -20,6 +20,12 @@ from nba_data import (
     fetch_head_to_head,
     fetch_h2h_player_stats,
     load_all_players,
+    get_connection,
+    needs_update,
+    save_to_db,
+    save_players_to_db,
+    load_season,
+    load_all_teams,
 )
 
 # ─── Configuração da página ───────────────────────────────────────────────────
@@ -123,7 +129,20 @@ div[data-testid="metric-container"] [data-testid="stMetricDelta"] { font-size: 1
 
 @st.cache_data(ttl=3600)
 def load_cache() -> dict:
-    return ensure_fresh_data()
+    conn = get_connection()
+    if needs_update(conn):
+        conn.close()
+        status = st.status("🏀 Baixando dados da NBA...", expanded=True)
+        status.write("Buscando dados dos times...")
+        conn = get_connection()
+        save_to_db(conn)
+        status.write("Buscando dados dos jogadores...")
+        save_players_to_db(conn)
+        status.update(label="✅ Dados carregados!", state="complete")
+    season = load_season(conn)
+    teams = load_all_teams(conn)
+    conn.close()
+    return {"season": season, "teams": teams}
 
 
 def get_team_color(abbr: str) -> str:
