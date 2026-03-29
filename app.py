@@ -410,11 +410,21 @@ def last_games_chart(games: list[dict], team_color: str) -> go.Figure:
 
 
 def radar_chart(team: dict, all_teams: dict) -> go.Figure:
-    # Ofensivas na meia-lua superior, defensivas na inferior
-    stats_keys = ["ast", "off_rating", "pts", "reb", "def_rating", "blk", "stl"]
+    # 4 ofensivas na meia-lua superior, 4 defensivas na inferior
+    stats_keys = [
+        "ast",
+        "off_rating",
+        "fg_pct",
+        "pts",
+        "reb",
+        "def_rating",
+        "blk",
+        "stl",
+    ]
     labels = [
         "Assist.",
         "Off Rtg",
+        "FG%",
         "Pontos",
         "Rebotes",
         "Def Rtg",
@@ -448,8 +458,9 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
     # Cores por categoria: ofensivo vs defensivo
     off_color = "#1565C0"  # azul
     def_color = "#C62828"  # vermelho
-    # Ordem: ast(off), off_rating(off), pts(off), reb(def), def_rating(def), blk(def), stl(def)
+    # Ordem: ast(off), off_rating(off), fg_pct(off), pts(off), reb(def), def_rating(def), blk(def), stl(def)
     label_colors = [
+        off_color,
         off_color,
         off_color,
         off_color,
