@@ -833,7 +833,8 @@ def page_games(team: dict):
     for i, g in enumerate(team["last_games"][:10]):
         game_id = g.get("game_id")
         icon = "✅" if g["wl"] == "W" else "❌"
-        label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} pts"
+        opp_pts = g["pts"] - g.get("plus_minus", 0)
+        label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} x {opp_pts}"
 
         with st.expander(label, expanded=False):
             if not game_id:
