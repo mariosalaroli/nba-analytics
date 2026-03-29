@@ -488,7 +488,7 @@ def page_overview(team: dict, all_teams: dict):
             <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:#111;">
                 {team["w"]}-{team["l"]}
             </div>
-            <div style="font-size:12px;color:#888;">{team["pct"]:.3f}</div>
+            <div style="font-size:12px;color:#888;">{team["pct"]:.3f} · #{team["conf_rank"]} {team["conference"]}</div>
         </div>
     </div>
     """,
