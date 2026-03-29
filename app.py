@@ -45,11 +45,8 @@ st.markdown(
 
 html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 
-header[data-testid="stHeader"] {
-    background: rgba(255,255,255,0) !important;
-    backdrop-filter: none !important;
-}
-#MainMenu, footer, [data-testid="stToolbar"] { display: none !important; }
+header[data-testid="stHeader"] { display: none !important; }
+#MainMenu, footer { display: none !important; }
 .block-container { padding: 1rem 2rem 2rem; max-width: 1400px; }
 
 /* Sidebar */
