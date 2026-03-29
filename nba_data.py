@@ -115,9 +115,18 @@ def init_db(conn: sqlite3.Connection):
             matchup   TEXT,
             wl        TEXT,
             pts       INTEGER,
-            ast       INTEGER,
+            oreb      INTEGER,
+            dreb      INTEGER,
             reb       INTEGER,
+            ast       INTEGER,
+            stl       INTEGER,
+            blk       INTEGER,
+            tov       INTEGER,
+            pf        INTEGER,
             fg_pct    REAL,
+            fg3_pct   REAL,
+            ft_pct    REAL,
+            plus_minus INTEGER,
             UNIQUE(team_abbr, date, matchup)
         );
         CREATE TABLE IF NOT EXISTS players (
@@ -251,9 +260,18 @@ def fetch_last_games(team_id: int, n: int = 10) -> list[dict]:
                 "matchup": str(row["MATCHUP"]),
                 "wl": str(row["WL"]),
                 "pts": int(row["PTS"]),
-                "ast": int(row["AST"]),
+                "oreb": int(row.get("OREB", 0)),
+                "dreb": int(row.get("DREB", 0)),
                 "reb": int(row["REB"]),
+                "ast": int(row["AST"]),
+                "stl": int(row.get("STL", 0)),
+                "blk": int(row.get("BLK", 0)),
+                "tov": int(row.get("TOV", 0)),
+                "pf": int(row.get("PF", 0)),
                 "fg_pct": round(float(row["FG_PCT"]) * 100, 1),
+                "fg3_pct": round(float(row.get("FG3_PCT", 0)) * 100, 1),
+                "ft_pct": round(float(row.get("FT_PCT", 0)) * 100, 1),
+                "plus_minus": int(row.get("PLUS_MINUS", 0)),
             }
         )
     return games
@@ -478,8 +496,9 @@ def save_to_db(conn: sqlite3.Connection):
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO games
-                    (team_abbr, date, matchup, wl, pts, ast, reb, fg_pct)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
+                     stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         abbr,
@@ -487,9 +506,18 @@ def save_to_db(conn: sqlite3.Connection):
                         g["matchup"],
                         g["wl"],
                         g["pts"],
-                        g["ast"],
+                        g["oreb"],
+                        g["dreb"],
                         g["reb"],
+                        g["ast"],
+                        g["stl"],
+                        g["blk"],
+                        g["tov"],
+                        g["pf"],
                         g["fg_pct"],
+                        g["fg3_pct"],
+                        g["ft_pct"],
+                        g["plus_minus"],
                     ),
                 )
 
@@ -638,7 +666,8 @@ def load_all_teams(conn: sqlite3.Connection) -> dict:
     for r in rows:
         abbr = r["abbreviation"]
         games_rows = conn.execute(
-            "SELECT date, matchup, wl, pts, ast, reb, fg_pct FROM games "
+            "SELECT date, matchup, wl, pts, oreb, dreb, reb, ast, stl, blk, "
+            "tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus FROM games "
             "WHERE team_abbr = ? ORDER BY date DESC",
             (abbr,),
         ).fetchall()
@@ -1060,8 +1089,9 @@ def force_update():
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO games
-                    (team_abbr, date, matchup, wl, pts, ast, reb, fg_pct)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
+                     stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         abbr,
@@ -1069,9 +1099,18 @@ def force_update():
                         g["matchup"],
                         g["wl"],
                         g["pts"],
-                        g["ast"],
+                        g["oreb"],
+                        g["dreb"],
                         g["reb"],
+                        g["ast"],
+                        g["stl"],
+                        g["blk"],
+                        g["tov"],
+                        g["pf"],
                         g["fg_pct"],
+                        g["fg3_pct"],
+                        g["ft_pct"],
+                        g["plus_minus"],
                     ),
                 )
 

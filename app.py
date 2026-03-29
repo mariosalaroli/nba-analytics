@@ -470,7 +470,6 @@ def page_overview(team: dict, all_teams: dict):
     color = get_team_color(team["abbreviation"])
 
     # Header do time
-    diff_class = "diff-pos" if team["diff"].startswith("+") else "diff-neg"
     streak_html = render_streak_chips(team["last_games"][:7])
 
     st.markdown(
@@ -489,7 +488,7 @@ def page_overview(team: dict, all_teams: dict):
             <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:#111;">
                 {team["w"]}-{team["l"]}
             </div>
-            <div style="font-size:12px;color:#888;">{team["pct"]:.3f} · dif <span class="{diff_class}">{team["diff"]}</span></div>
+            <div style="font-size:12px;color:#888;">{team["pct"]:.3f}</div>
         </div>
     </div>
     """,
@@ -535,13 +534,28 @@ def page_overview(team: dict, all_teams: dict):
             f"<div style='margin:8px 0 12px;'>{streak_html}</div>",
             unsafe_allow_html=True,
         )
+        games_data = []
         for g in team["last_games"][:7]:
-            icon = "✅" if g["wl"] == "W" else "❌"
-            st.markdown(
-                f"{icon} &nbsp; `{g['date']}` &nbsp; **{g['matchup']}** &nbsp;&nbsp; "
-                f"`{g['pts']} pts` · `{g['ast']} ast` · `{g['reb']} reb`",
-                unsafe_allow_html=True,
+            games_data.append(
+                {
+                    "Data": g["date"],
+                    "Jogo": g["matchup"],
+                    "W/L": g["wl"],
+                    "PTS": g["pts"],
+                    "REB": g["reb"],
+                    "AST": g["ast"],
+                    "STL": g.get("stl", 0),
+                    "BLK": g.get("blk", 0),
+                    "TOV": g.get("tov", 0),
+                    "FG%": g["fg_pct"],
+                    "3P%": g.get("fg3_pct", 0),
+                    "FT%": g.get("ft_pct", 0),
+                    "+/−": g.get("plus_minus", 0),
+                }
             )
+        if games_data:
+            df_games = pd.DataFrame(games_data)
+            st.dataframe(df_games, use_container_width=True, hide_index=True)
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         rec_cols = st.columns(3)
