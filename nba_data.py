@@ -23,6 +23,23 @@ from nba_api.stats.endpoints import (
 SEASON = "2025-26"
 DB_PATH = Path("data/nba.db")
 SLEEP = 0.8
+API_TIMEOUT = 60
+API_RETRIES = 3
+
+
+def _api_call(endpoint_cls, **kwargs):
+    """Chama endpoint da NBA API com retry e timeout."""
+    for attempt in range(1, API_RETRIES + 1):
+        try:
+            time.sleep(SLEEP)
+            return endpoint_cls(timeout=API_TIMEOUT, **kwargs)
+        except Exception as e:
+            if attempt < API_RETRIES:
+                wait = attempt * 5
+                print(f"  Tentativa {attempt} falhou ({e}), aguardando {wait}s...")
+                time.sleep(wait)
+            else:
+                raise
 
 
 def _f(row, col, pct=False):
@@ -187,8 +204,8 @@ def get_all_teams() -> list[dict]:
 
 
 def fetch_team_stats(team_id: int) -> dict:
-    time.sleep(SLEEP)
-    dash = TeamDashboardByGeneralSplits(
+    dash = _api_call(
+        TeamDashboardByGeneralSplits,
         team_id=team_id,
         per_mode_detailed="PerGame",
         season=SEASON,
@@ -221,8 +238,7 @@ def fetch_team_stats(team_id: int) -> dict:
 
 
 def fetch_standings() -> pd.DataFrame:
-    time.sleep(SLEEP)
-    standings = LeagueStandings(season=SEASON)
+    standings = _api_call(LeagueStandings, season=SEASON)
     df = standings.get_data_frames()[0]
     return df[
         [
@@ -245,8 +261,8 @@ def fetch_standings() -> pd.DataFrame:
 
 
 def fetch_last_games(team_id: int, n: int = 10) -> list[dict]:
-    time.sleep(SLEEP)
-    log = TeamGameLog(
+    log = _api_call(
+        TeamGameLog,
         team_id=team_id,
         season=SEASON,
         season_type_all_star="Regular Season",
@@ -279,8 +295,9 @@ def fetch_last_games(team_id: int, n: int = 10) -> list[dict]:
 
 def fetch_advanced_metrics() -> dict:
     """Busca métricas avançadas estimadas para todos os times."""
-    time.sleep(SLEEP)
-    metrics = TeamEstimatedMetrics(season=SEASON, season_type="Regular Season")
+    metrics = _api_call(
+        TeamEstimatedMetrics, season=SEASON, season_type="Regular Season"
+    )
     df = metrics.get_data_frames()[0]
     result = {}
     for _, row in df.iterrows():
@@ -300,8 +317,8 @@ def fetch_advanced_metrics() -> dict:
 
 def fetch_opponent_stats() -> dict:
     """Busca stats dos adversários (por jogo) para todos os times."""
-    time.sleep(SLEEP)
-    d = LeagueDashTeamStats(
+    d = _api_call(
+        LeagueDashTeamStats,
         season=SEASON,
         per_mode_detailed="PerGame",
         measure_type_detailed_defense="Opponent",
@@ -326,8 +343,8 @@ def fetch_opponent_stats() -> dict:
 
 def fetch_misc_stats() -> dict:
     """Busca stats misc (second chance, fast break, paint) para todos os times."""
-    time.sleep(SLEEP)
-    d = LeagueDashTeamStats(
+    d = _api_call(
+        LeagueDashTeamStats,
         season=SEASON,
         per_mode_detailed="PerGame",
         measure_type_detailed_defense="Misc",
@@ -547,8 +564,8 @@ def save_players_to_db(conn: sqlite3.Connection):
     print("Buscando dados de jogadores...")
 
     # Stats base (per game)
-    time.sleep(SLEEP)
-    base = LeagueDashPlayerStats(
+    base = _api_call(
+        LeagueDashPlayerStats,
         season=SEASON,
         per_mode_detailed="PerGame",
         season_type_all_star="Regular Season",
@@ -556,8 +573,8 @@ def save_players_to_db(conn: sqlite3.Connection):
     print(f"  Stats base: {len(base)} jogadores")
 
     # Stats avançadas
-    time.sleep(SLEEP)
-    adv = LeagueDashPlayerStats(
+    adv = _api_call(
+        LeagueDashPlayerStats,
         season=SEASON,
         per_mode_detailed="PerGame",
         measure_type_detailed_defense="Advanced",

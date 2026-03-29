@@ -23,7 +23,13 @@ jobs:
         run: pip install nba_api pandas
 
       - name: Atualizar banco de dados
-        run: python nba_data.py
+        run: |
+          for i in 1 2 3; do
+            echo "Tentativa $i..."
+            python nba_data.py && break
+            echo "Falhou, aguardando 30s..."
+            sleep 30
+          done
 
       - name: Commit e push se houver mudanças
         run: |
