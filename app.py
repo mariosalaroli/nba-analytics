@@ -551,7 +551,7 @@ def page_overview(team: dict, all_teams: dict):
 
     with col_left:
         st.markdown(
-            '<div class="section-header">Radar ofensivo/defensivo</div>',
+            '<div class="section-header">Radar <span style="color:#1565C0">ofensivo</span> / <span style="color:#C62828">defensivo</span></div>',
             unsafe_allow_html=True,
         )
         st.plotly_chart(
