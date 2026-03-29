@@ -127,7 +127,6 @@ def init_db(conn: sqlite3.Connection):
             fg_pct    REAL,
             fg3_pct   REAL,
             ft_pct    REAL,
-            plus_minus INTEGER,
             UNIQUE(team_abbr, date, matchup)
         );
         CREATE TABLE IF NOT EXISTS players (
@@ -273,7 +272,6 @@ def fetch_last_games(team_id: int, n: int = 10) -> list[dict]:
                 "fg_pct": round(float(row["FG_PCT"]) * 100, 1),
                 "fg3_pct": round(float(row.get("FG3_PCT", 0)) * 100, 1),
                 "ft_pct": round(float(row.get("FT_PCT", 0)) * 100, 1),
-                "plus_minus": int(row.get("PLUS_MINUS", 0)),
             }
         )
     return games
@@ -499,8 +497,8 @@ def save_to_db(conn: sqlite3.Connection):
                     """
                     INSERT OR IGNORE INTO games
                     (game_id, team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
-                     stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         g["game_id"],
@@ -520,7 +518,6 @@ def save_to_db(conn: sqlite3.Connection):
                         g["fg_pct"],
                         g["fg3_pct"],
                         g["ft_pct"],
-                        g["plus_minus"],
                     ),
                 )
 
@@ -670,7 +667,7 @@ def load_all_teams(conn: sqlite3.Connection) -> dict:
         abbr = r["abbreviation"]
         games_rows = conn.execute(
             "SELECT game_id, date, matchup, wl, pts, oreb, dreb, reb, ast, stl, blk, "
-            "tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus FROM games "
+            "tov, pf, fg_pct, fg3_pct, ft_pct FROM games "
             "WHERE team_abbr = ? ORDER BY date DESC",
             (abbr,),
         ).fetchall()
@@ -1309,8 +1306,8 @@ def force_update():
                     """
                     INSERT OR IGNORE INTO games
                     (game_id, team_abbr, date, matchup, wl, pts, oreb, dreb, reb, ast,
-                     stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct, plus_minus)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     stl, blk, tov, pf, fg_pct, fg3_pct, ft_pct)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         g["game_id"],
@@ -1330,7 +1327,6 @@ def force_update():
                         g["fg_pct"],
                         g["fg3_pct"],
                         g["ft_pct"],
-                        g["plus_minus"],
                     ),
                 )
 

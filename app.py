@@ -557,7 +557,6 @@ def page_overview(team: dict, all_teams: dict):
                     "FG%": g["fg_pct"],
                     "3P%": g.get("fg3_pct", 0),
                     "FT%": g.get("ft_pct", 0),
-                    "+/−": g.get("plus_minus", 0),
                 }
             )
         if games_data:
@@ -830,11 +829,28 @@ def page_games(team: dict):
         unsafe_allow_html=True,
     )
 
+    # Buscar pontos do adversário para cada jogo via game_id
+    game_ids = [g.get("game_id") for g in team["last_games"][:10] if g.get("game_id")]
+    opp_pts_map = {}
+    if game_ids:
+        conn_g = get_connection()
+        for gid in game_ids:
+            row = conn_g.execute(
+                "SELECT pts FROM games WHERE game_id = ? AND team_abbr != ?",
+                (gid, team["abbreviation"]),
+            ).fetchone()
+            if row:
+                opp_pts_map[gid] = row["pts"]
+        conn_g.close()
+
     for i, g in enumerate(team["last_games"][:10]):
         game_id = g.get("game_id")
         icon = "✅" if g["wl"] == "W" else "❌"
-        opp_pts = g["pts"] - g.get("plus_minus", 0)
-        label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} x {opp_pts}"
+        opp_pts = opp_pts_map.get(game_id)
+        if opp_pts is not None:
+            label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} x {opp_pts}"
+        else:
+            label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} pts"
 
         with st.expander(label, expanded=False):
             if not game_id:
