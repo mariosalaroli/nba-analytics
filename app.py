@@ -228,7 +228,7 @@ def get_team_color(abbr: str) -> str:
 
 def render_sidebar(cache: dict) -> tuple[dict, str]:
     with st.sidebar:
-        st.markdown("### 🏀 NBA Analytics")
+        st.markdown("### 🏀 NBA - Analytics")
         st.markdown(f"*Temporada {cache['season']}*")
         st.divider()
 
