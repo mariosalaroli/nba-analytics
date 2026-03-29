@@ -377,7 +377,7 @@ def save_to_db(conn: sqlite3.Connection):
             stats.update(opp)
             misc = misc_map.get(tid, {})
             stats.update(misc)
-            games = fetch_last_games(tid, n=10)
+            games = fetch_last_games(tid, n=15)
             st = standings_map.get(tid, {})
 
             w = int(st.get("WINS", 0))
@@ -1186,7 +1186,7 @@ def force_update():
             stats.update(opp)
             misc = misc_map.get(tid, {})
             stats.update(misc)
-            games = fetch_last_games(tid, n=10)
+            games = fetch_last_games(tid, n=15)
             st = standings_map.get(tid, {})
 
             w = int(st.get("WINS", 0))
