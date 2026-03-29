@@ -14,6 +14,7 @@ from nba_data import (
     ensure_fresh_data,
     force_update,
     get_last_update,
+    get_last_game_date,
     load_players_list,
     load_player_stats,
     fetch_player_game_log,
@@ -309,6 +310,13 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
                 st.caption(f"Última atualização: {dt.strftime('%d/%m/%Y %H:%M')}")
             except Exception:
                 st.caption(f"Última atualização: {last_upd}")
+        last_game = get_last_game_date()
+        if last_game:
+            try:
+                gd = _dt.strptime(last_game, "%Y-%m-%d")
+                st.caption(f"Dados da API até: {gd.strftime('%d/%m/%Y')}")
+            except Exception:
+                st.caption(f"Dados da API até: {last_game}")
 
     return cache["teams"][selected_abbr], page
 

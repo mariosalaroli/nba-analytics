@@ -1363,6 +1363,14 @@ def get_last_update() -> str | None:
     return row["value"] if row else None
 
 
+def get_last_game_date() -> str | None:
+    """Retorna a data do jogo mais recente disponível nos dados."""
+    conn = get_connection()
+    row = conn.execute("SELECT MAX(date) FROM games").fetchone()
+    conn.close()
+    return row[0] if row and row[0] else None
+
+
 if __name__ == "__main__":
     conn = get_connection()
     save_to_db(conn)
