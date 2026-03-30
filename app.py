@@ -153,6 +153,14 @@ section[data-testid="stSidebar"] button[kind="secondary"]:hover {
 
 
 @st.cache_data(ttl=3600)
+def _load_cache_from_db() -> dict:
+    conn = get_connection()
+    season = load_season(conn)
+    teams = load_all_teams(conn)
+    conn.close()
+    return {"season": season, "teams": teams}
+
+
 def load_cache() -> dict:
     conn = get_connection()
     if needs_update(conn):
@@ -164,10 +172,9 @@ def load_cache() -> dict:
         status.write("Buscando dados dos jogadores...")
         save_players_to_db(conn)
         status.update(label="✅ Dados carregados!", state="complete")
-    season = load_season(conn)
-    teams = load_all_teams(conn)
-    conn.close()
-    return {"season": season, "teams": teams}
+        conn.close()
+        _load_cache_from_db.clear()
+    return _load_cache_from_db()
 
 
 def get_team_color(abbr: str) -> str:
