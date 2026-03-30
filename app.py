@@ -153,24 +153,21 @@ section[data-testid="stSidebar"] button[kind="secondary"]:hover {
 
 
 @st.cache_data(ttl=3600)
-def _load_cache_from_db() -> dict:
-    conn = get_connection()
-    season = load_season(conn)
-    teams = load_all_teams(conn)
-    conn.close()
-    return {"season": season, "teams": teams}
-
-
 def load_cache() -> dict:
     conn = get_connection()
     if needs_update(conn):
         conn.close()
         status = st.status("🏀 Baixando dados da NBA...", expanded=True)
-        for msg in force_update():
-            status.write(msg)
+        status.write("Buscando dados dos times...")
+        conn = get_connection()
+        save_to_db(conn)
+        status.write("Buscando dados dos jogadores...")
+        save_players_to_db(conn)
         status.update(label="✅ Dados carregados!", state="complete")
-        _load_cache_from_db.clear()
-    return _load_cache_from_db()
+    season = load_season(conn)
+    teams = load_all_teams(conn)
+    conn.close()
+    return {"season": season, "teams": teams}
 
 
 def get_team_color(abbr: str) -> str:
@@ -1731,10 +1728,11 @@ def page_players():
         unsafe_allow_html=True,
     )
 
-    game_log = _get_player_game_log(pid)
+    with st.spinner("Buscando últimos jogos..."):
+        game_log = _get_player_game_log(pid)
 
     if not game_log:
-        st.info("Sem jogos recentes disponíveis. Tente novamente em alguns segundos.")
+        st.info("Sem jogos recentes.")
         return
 
     last5 = game_log[:5]

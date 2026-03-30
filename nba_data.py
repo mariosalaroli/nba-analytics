@@ -146,33 +146,6 @@ def init_db(conn: sqlite3.Connection):
             ft_pct    REAL,
             UNIQUE(team_abbr, date, matchup)
         );
-        CREATE TABLE IF NOT EXISTS player_games (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_id   INTEGER,
-            date        TEXT,
-            matchup     TEXT,
-            wl          TEXT,
-            min         INTEGER,
-            pts         INTEGER,
-            ast         INTEGER,
-            reb         INTEGER,
-            oreb        INTEGER,
-            dreb        INTEGER,
-            stl         INTEGER,
-            blk         INTEGER,
-            tov         INTEGER,
-            fg3m        INTEGER,
-            fg3a        INTEGER,
-            fgm         INTEGER,
-            fga         INTEGER,
-            fg_pct      REAL,
-            fg3_pct     REAL,
-            ftm         INTEGER,
-            fta         INTEGER,
-            ft_pct      REAL,
-            plus_minus  INTEGER,
-            UNIQUE(player_id, date, matchup)
-        );
         CREATE TABLE IF NOT EXISTS players (
             player_id      INTEGER PRIMARY KEY,
             player_name    TEXT,
@@ -689,105 +662,6 @@ def save_players_to_db(conn: sqlite3.Connection):
     print(f"  {count} jogadores salvos na tabela 'players'")
 
 
-def save_player_games_to_db(conn: sqlite3.Connection):
-    """Busca os últimos 10 jogos de cada jogador e grava no BD.
-
-    É um gerador: faz yield de mensagens de progresso.
-    Quando chamado fora de um contexto de gerador, use:
-        for _ in save_player_games_to_db(conn): pass
-    """
-    rows = conn.execute(
-        "SELECT player_id, player_name FROM players WHERE gp > 0"
-    ).fetchall()
-    total = len(rows)
-    yield f"Baixando últimos jogos de {total} jogadores..."
-
-    conn.execute("DELETE FROM player_games")
-
-    count = 0
-    for i, r in enumerate(rows, 1):
-        pid = r["player_id"]
-        name = r["player_name"]
-        if i % 25 == 0:
-            yield f"  Game logs [{i}/{total}] {name}..."
-
-        try:
-            time.sleep(SLEEP)
-            log = PlayerGameLog(
-                player_id=pid,
-                season=SEASON,
-                season_type_all_star="Regular Season",
-                timeout=API_TIMEOUT,
-            )
-            df = log.get_data_frames()[0].head(10)
-
-            for _, row in df.iterrows():
-                conn.execute(
-                    """INSERT OR IGNORE INTO player_games
-                    (player_id, date, matchup, wl, min, pts, ast, reb, oreb, dreb,
-                     stl, blk, tov, fg3m, fg3a, fgm, fga, fg_pct, fg3_pct,
-                     ftm, fta, ft_pct, plus_minus)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                    (
-                        pid,
-                        str(row["GAME_DATE"]),
-                        str(row["MATCHUP"]),
-                        str(row["WL"]),
-                        int(row["MIN"]) if pd.notna(row["MIN"]) else 0,
-                        int(row["PTS"]),
-                        int(row["AST"]),
-                        int(row["REB"]),
-                        int(row["OREB"]),
-                        int(row["DREB"]),
-                        int(row["STL"]),
-                        int(row["BLK"]),
-                        int(row["TOV"]),
-                        int(row["FG3M"]),
-                        int(row["FG3A"]),
-                        int(row["FGM"]),
-                        int(row["FGA"]),
-                        (
-                            round(float(row["FG_PCT"]) * 100, 1)
-                            if pd.notna(row["FG_PCT"])
-                            else 0
-                        ),
-                        (
-                            round(float(row["FG3_PCT"]) * 100, 1)
-                            if pd.notna(row["FG3_PCT"])
-                            else 0
-                        ),
-                        int(row["FTM"]),
-                        int(row["FTA"]),
-                        (
-                            round(float(row["FT_PCT"]) * 100, 1)
-                            if pd.notna(row["FT_PCT"])
-                            else 0
-                        ),
-                        int(row["PLUS_MINUS"]) if pd.notna(row["PLUS_MINUS"]) else 0,
-                    ),
-                )
-            count += 1
-        except Exception as e:
-            yield f"⚠️ Erro game log {name}: {e}"
-
-        if i % 25 == 0:
-            conn.commit()
-
-    conn.commit()
-    yield f"  ✅ {count}/{total} jogadores — game logs salvos"
-
-
-def load_player_game_log(
-    conn: sqlite3.Connection, player_id: int, n: int = 0
-) -> list[dict]:
-    """Carrega game log de um jogador do BD. n=0 retorna todos."""
-    query = "SELECT * FROM player_games WHERE player_id = ? ORDER BY date DESC"
-    if n > 0:
-        query += f" LIMIT {n}"
-    rows = conn.execute(query, (player_id,)).fetchall()
-    return [dict(r) for r in rows]
-
-
 def get_connection() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
@@ -866,23 +740,14 @@ def load_all_players() -> list[dict]:
 
 
 def fetch_player_game_log(player_id: int, n: int = 10) -> list[dict]:
-    """Busca os últimos N jogos de um jogador via API (on-demand) com retry."""
-    for attempt in range(1, API_RETRIES + 1):
-        try:
-            time.sleep(SLEEP)
-            log = PlayerGameLog(
-                player_id=player_id,
-                season=SEASON,
-                season_type_all_star="Regular Season",
-                timeout=API_TIMEOUT,
-            )
-            df = log.get_data_frames()[0].head(n)
-            break
-        except Exception as e:
-            if attempt < API_RETRIES:
-                time.sleep(attempt * 3)
-            else:
-                return []
+    """Busca os últimos N jogos de um jogador via API (on-demand)."""
+    time.sleep(SLEEP)
+    log = PlayerGameLog(
+        player_id=player_id,
+        season=SEASON,
+        season_type_all_star="Regular Season",
+    )
+    df = log.get_data_frames()[0].head(n)
     games = []
     for _, row in df.iterrows():
         games.append(
@@ -930,22 +795,13 @@ def fetch_player_game_log(player_id: int, n: int = 10) -> list[dict]:
 
 def fetch_head_to_head(team_id: int, opponent_abbr: str) -> list[dict]:
     """Busca jogos entre dois times na temporada atual via API (on-demand)."""
-    for attempt in range(1, API_RETRIES + 1):
-        try:
-            time.sleep(SLEEP)
-            log = TeamGameLog(
-                team_id=team_id,
-                season=SEASON,
-                season_type_all_star="Regular Season",
-                timeout=API_TIMEOUT,
-            )
-            df = log.get_data_frames()[0]
-            break
-        except Exception:
-            if attempt < API_RETRIES:
-                time.sleep(attempt * 3)
-            else:
-                return []
+    time.sleep(SLEEP)
+    log = TeamGameLog(
+        team_id=team_id,
+        season=SEASON,
+        season_type_all_star="Regular Season",
+    )
+    df = log.get_data_frames()[0]
     df = df[df["MATCHUP"].str.contains(opponent_abbr)]
     games = []
     for _, row in df.iterrows():
@@ -975,17 +831,9 @@ def fetch_head_to_head(team_id: int, opponent_abbr: str) -> list[dict]:
 
 def fetch_game_details(game_id: str) -> dict:
     """Busca box score completo de um jogo: stats dos dois times e jogadores."""
-    for attempt in range(1, API_RETRIES + 1):
-        try:
-            time.sleep(SLEEP)
-            bs = BoxScoreTraditionalV3(game_id=game_id, timeout=API_TIMEOUT)
-            df = bs.get_data_frames()[0]
-            break
-        except Exception:
-            if attempt < API_RETRIES:
-                time.sleep(attempt * 3)
-            else:
-                return {"teams": [], "players": {}}
+    time.sleep(SLEEP)
+    bs = BoxScoreTraditionalV3(game_id=game_id)
+    df = bs.get_data_frames()[0]
 
     teams_in_game = df["teamId"].unique()
     result = {"teams": [], "players": {}}
@@ -1223,19 +1071,9 @@ def fetch_h2h_player_stats(game_ids: list[str], team_id: int) -> list[dict]:
     )
 
     for gid in game_ids:
-        for attempt in range(1, API_RETRIES + 1):
-            try:
-                time.sleep(SLEEP)
-                bs = BoxScoreTraditionalV3(game_id=gid, timeout=API_TIMEOUT)
-                df = bs.get_data_frames()[0]
-                break
-            except Exception:
-                if attempt < API_RETRIES:
-                    time.sleep(attempt * 3)
-                else:
-                    df = pd.DataFrame()
-        if df.empty:
-            continue
+        time.sleep(SLEEP)
+        bs = BoxScoreTraditionalV3(game_id=gid)
+        df = bs.get_data_frames()[0]
         df_team = df[df["teamId"] == team_id]
         for _, row in df_team.iterrows():
             pid = int(row["personId"])
