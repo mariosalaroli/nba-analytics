@@ -1671,11 +1671,13 @@ def page_players(team_abbr: str = "CLE"):
     if prev_team != team_abbr:
         st.session_state["_player_idx"] = default_player_idx
         st.session_state["_player_team"] = team_abbr
+        # Resetar o widget do selectbox para forçar o novo índice
+        st.session_state["player_select"] = default_player_idx
 
     # Persistir seleção
     if "_player_idx" not in st.session_state:
         st.session_state["_player_idx"] = default_player_idx
-    saved_idx = st.session_state["_player_idx"]
+    saved_idx = st.session_state.get("player_select", st.session_state["_player_idx"])
     if saved_idx >= len(players):
         saved_idx = default_player_idx
 
