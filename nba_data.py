@@ -930,13 +930,22 @@ def fetch_player_game_log(player_id: int, n: int = 10) -> list[dict]:
 
 def fetch_head_to_head(team_id: int, opponent_abbr: str) -> list[dict]:
     """Busca jogos entre dois times na temporada atual via API (on-demand)."""
-    time.sleep(SLEEP)
-    log = TeamGameLog(
-        team_id=team_id,
-        season=SEASON,
-        season_type_all_star="Regular Season",
-    )
-    df = log.get_data_frames()[0]
+    for attempt in range(1, API_RETRIES + 1):
+        try:
+            time.sleep(SLEEP)
+            log = TeamGameLog(
+                team_id=team_id,
+                season=SEASON,
+                season_type_all_star="Regular Season",
+                timeout=API_TIMEOUT,
+            )
+            df = log.get_data_frames()[0]
+            break
+        except Exception:
+            if attempt < API_RETRIES:
+                time.sleep(attempt * 3)
+            else:
+                return []
     df = df[df["MATCHUP"].str.contains(opponent_abbr)]
     games = []
     for _, row in df.iterrows():
@@ -966,9 +975,17 @@ def fetch_head_to_head(team_id: int, opponent_abbr: str) -> list[dict]:
 
 def fetch_game_details(game_id: str) -> dict:
     """Busca box score completo de um jogo: stats dos dois times e jogadores."""
-    time.sleep(SLEEP)
-    bs = BoxScoreTraditionalV3(game_id=game_id)
-    df = bs.get_data_frames()[0]
+    for attempt in range(1, API_RETRIES + 1):
+        try:
+            time.sleep(SLEEP)
+            bs = BoxScoreTraditionalV3(game_id=game_id, timeout=API_TIMEOUT)
+            df = bs.get_data_frames()[0]
+            break
+        except Exception:
+            if attempt < API_RETRIES:
+                time.sleep(attempt * 3)
+            else:
+                return {"teams": [], "players": {}}
 
     teams_in_game = df["teamId"].unique()
     result = {"teams": [], "players": {}}
@@ -1206,9 +1223,19 @@ def fetch_h2h_player_stats(game_ids: list[str], team_id: int) -> list[dict]:
     )
 
     for gid in game_ids:
-        time.sleep(SLEEP)
-        bs = BoxScoreTraditionalV3(game_id=gid)
-        df = bs.get_data_frames()[0]
+        for attempt in range(1, API_RETRIES + 1):
+            try:
+                time.sleep(SLEEP)
+                bs = BoxScoreTraditionalV3(game_id=gid, timeout=API_TIMEOUT)
+                df = bs.get_data_frames()[0]
+                break
+            except Exception:
+                if attempt < API_RETRIES:
+                    time.sleep(attempt * 3)
+                else:
+                    df = pd.DataFrame()
+        if df.empty:
+            continue
         df_team = df[df["teamId"] == team_id]
         for _, row in df_team.iterrows():
             pid = int(row["personId"])
