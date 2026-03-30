@@ -866,14 +866,23 @@ def load_all_players() -> list[dict]:
 
 
 def fetch_player_game_log(player_id: int, n: int = 10) -> list[dict]:
-    """Busca os últimos N jogos de um jogador via API (on-demand)."""
-    time.sleep(SLEEP)
-    log = PlayerGameLog(
-        player_id=player_id,
-        season=SEASON,
-        season_type_all_star="Regular Season",
-    )
-    df = log.get_data_frames()[0].head(n)
+    """Busca os últimos N jogos de um jogador via API (on-demand) com retry."""
+    for attempt in range(1, API_RETRIES + 1):
+        try:
+            time.sleep(SLEEP)
+            log = PlayerGameLog(
+                player_id=player_id,
+                season=SEASON,
+                season_type_all_star="Regular Season",
+                timeout=API_TIMEOUT,
+            )
+            df = log.get_data_frames()[0].head(n)
+            break
+        except Exception as e:
+            if attempt < API_RETRIES:
+                time.sleep(attempt * 3)
+            else:
+                return []
     games = []
     for _, row in df.iterrows():
         games.append(

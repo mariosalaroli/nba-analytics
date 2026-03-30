@@ -1725,17 +1725,16 @@ def page_players():
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Últimos jogos (carrega da API, abaixo dos cards) ──
+    # ── Últimos jogos ──
     st.markdown(
         '<div class="section-header">Últimos jogos</div>',
         unsafe_allow_html=True,
     )
 
-    with st.spinner("Buscando últimos jogos..."):
-        game_log = _get_player_game_log(pid)
+    game_log = _get_player_game_log(pid)
 
     if not game_log:
-        st.info("Sem jogos recentes.")
+        st.info("Sem jogos recentes disponíveis. Tente novamente em alguns segundos.")
         return
 
     last5 = game_log[:5]
