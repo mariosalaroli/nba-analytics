@@ -18,8 +18,6 @@ from nba_data import (
     load_players_list,
     load_player_stats,
     fetch_player_game_log,
-    save_player_games_to_db,
-    load_player_game_log,
     fetch_head_to_head,
     fetch_h2h_player_stats,
     fetch_game_details,
@@ -165,9 +163,6 @@ def load_cache() -> dict:
         save_to_db(conn)
         status.write("Buscando dados dos jogadores...")
         save_players_to_db(conn)
-        status.write("Buscando game logs dos jogadores...")
-        for msg in save_player_games_to_db(conn):
-            status.write(msg)
         status.update(label="✅ Dados carregados!", state="complete")
     season = load_season(conn)
     teams = load_all_teams(conn)
@@ -1633,12 +1628,7 @@ def _get_players_list():
 
 @st.cache_data(ttl=300)
 def _get_player_game_log(player_id: int):
-    conn = get_connection()
-    games = load_player_game_log(conn, player_id, n=10)
-    conn.close()
-    if not games:
-        return fetch_player_game_log(player_id, n=10)
-    return games
+    return fetch_player_game_log(player_id, n=10)
 
 
 def page_players():
@@ -1732,7 +1722,7 @@ def page_players():
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Últimos jogos ──
+    # ── Últimos jogos (carrega da API, abaixo dos cards) ──
     st.markdown(
         '<div class="section-header">Últimos jogos</div>',
         unsafe_allow_html=True,

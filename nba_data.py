@@ -1494,8 +1494,6 @@ def force_update():
     yield "Baixando dados de jogadores (base)..."
     save_players_to_db(conn)
 
-    yield from save_player_games_to_db(conn)
-
     yield "✅ Atualização concluída!"
     conn.close()
 
@@ -1520,6 +1518,4 @@ if __name__ == "__main__":
     conn = get_connection()
     save_to_db(conn)
     save_players_to_db(conn)
-    for msg in save_player_games_to_db(conn):
-        print(msg)
     conn.close()
