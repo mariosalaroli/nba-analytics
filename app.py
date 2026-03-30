@@ -1631,7 +1631,7 @@ def _get_player_game_log(player_id: int):
     return fetch_player_game_log(player_id, n=10)
 
 
-def page_players():
+def page_players(team_abbr: str = "CLE"):
     st.markdown(
         '<div class="section-header">Estatísticas de Jogador</div>',
         unsafe_allow_html=True,
@@ -1644,9 +1644,33 @@ def page_players():
 
     # Seletor com busca por nome
     player_names = [f"{p['player_name']} ({p['team_abbr']})" for p in players]
-    default_player_idx = next(
-        (i for i, p in enumerate(players) if "Harden" in p["player_name"]), 0
-    )
+
+    # Jogador padrão: para CLE mantém Harden, para outros times seleciona o maior pontuador
+    if team_abbr == "CLE":
+        default_player_idx = next(
+            (
+                i
+                for i, p in enumerate(players)
+                if "Harden" in p["player_name"] and p["team_abbr"] == "CLE"
+            ),
+            0,
+        )
+    else:
+        team_players = [
+            (i, p) for i, p in enumerate(players) if p["team_abbr"] == team_abbr
+        ]
+        if team_players:
+            default_player_idx = max(
+                team_players, key=lambda x: x[1].get("pts", 0) or 0
+            )[0]
+        else:
+            default_player_idx = 0
+
+    # Detectar mudança de time para resetar seleção
+    prev_team = st.session_state.get("_player_team", None)
+    if prev_team != team_abbr:
+        st.session_state["_player_idx"] = default_player_idx
+        st.session_state["_player_team"] = team_abbr
 
     # Persistir seleção
     if "_player_idx" not in st.session_state:
@@ -1988,7 +2012,7 @@ def main():
     elif page == "Confronto direto":
         page_comparison(cache["teams"])
     elif page == "Jogadores":
-        page_players()
+        page_players(team["abbreviation"])
 
 
 if __name__ == "__main__":

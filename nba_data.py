@@ -705,13 +705,14 @@ def load_players_list() -> list[dict]:
     """Retorna lista de jogadores com id, nome e time para o seletor."""
     conn = get_connection()
     rows = conn.execute(
-        "SELECT player_id, player_name, team_abbr FROM players ORDER BY player_name"
+        "SELECT player_id, player_name, team_abbr, pts FROM players ORDER BY player_name"
     ).fetchall()
     result = [
         {
             "player_id": r["player_id"],
             "player_name": r["player_name"],
             "team_abbr": r["team_abbr"],
+            "pts": r["pts"],
         }
         for r in rows
     ]
