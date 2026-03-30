@@ -1631,7 +1631,7 @@ def _get_player_game_log(player_id: int):
     return fetch_player_game_log(player_id, n=10)
 
 
-def page_players(team_abbr: str = "CLE"):
+def page_players():
     st.markdown(
         '<div class="section-header">Estatísticas de Jogador</div>',
         unsafe_allow_html=True,
@@ -1644,40 +1644,14 @@ def page_players(team_abbr: str = "CLE"):
 
     # Seletor com busca por nome
     player_names = [f"{p['player_name']} ({p['team_abbr']})" for p in players]
-
-    # Jogador padrão: para CLE mantém Harden, para outros times seleciona o maior pontuador
-    if team_abbr == "CLE":
-        default_player_idx = next(
-            (
-                i
-                for i, p in enumerate(players)
-                if "Harden" in p["player_name"] and p["team_abbr"] == "CLE"
-            ),
-            0,
-        )
-    else:
-        team_players = [
-            (i, p) for i, p in enumerate(players) if p["team_abbr"] == team_abbr
-        ]
-        if team_players:
-            default_player_idx = max(
-                team_players, key=lambda x: x[1].get("pts", 0) or 0
-            )[0]
-        else:
-            default_player_idx = 0
-
-    # Detectar mudança de time para resetar seleção
-    prev_team = st.session_state.get("_player_team", None)
-    if prev_team != team_abbr:
-        st.session_state["_player_idx"] = default_player_idx
-        st.session_state["_player_team"] = team_abbr
-        # Resetar o widget do selectbox para forçar o novo índice
-        st.session_state["player_select"] = default_player_idx
+    default_player_idx = next(
+        (i for i, p in enumerate(players) if "Harden" in p["player_name"]), 0
+    )
 
     # Persistir seleção
     if "_player_idx" not in st.session_state:
         st.session_state["_player_idx"] = default_player_idx
-    saved_idx = st.session_state.get("player_select", st.session_state["_player_idx"])
+    saved_idx = st.session_state["_player_idx"]
     if saved_idx >= len(players):
         saved_idx = default_player_idx
 
@@ -2014,7 +1988,7 @@ def main():
     elif page == "Confronto direto":
         page_comparison(cache["teams"])
     elif page == "Jogadores":
-        page_players(team["abbreviation"])
+        page_players()
 
 
 if __name__ == "__main__":
