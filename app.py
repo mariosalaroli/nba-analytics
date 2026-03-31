@@ -1645,7 +1645,7 @@ def page_players():
     # Seletor com busca por nome
     player_names = [f"{p['player_name']} ({p['team_abbr']})" for p in players]
     default_player_idx = next(
-        (i for i, p in enumerate(players) if "Harden" in p["player_name"]), 0
+        (i for i, p in enumerate(players) if "Gui Santos" in p["player_name"]), 0
     )
 
     # Persistir seleção
