@@ -1814,15 +1814,15 @@ def page_offensive_profile(team: dict, all_teams: dict):
     team_names = [t["abbreviation"] for t in sorted_by_paint]
 
     bar_colors_paint = [
-        "#7e57c2" if t["abbreviation"] == abbr_sel else "#b39ddb"
+        "#66c49a" if t["abbreviation"] == abbr_sel else "#b3e2cd"
         for t in sorted_by_paint
     ]
     bar_colors_mid = [
-        "#78909c" if t["abbreviation"] == abbr_sel else "#b0bec5"
+        "#e8a060" if t["abbreviation"] == abbr_sel else "#fdcdac"
         for t in sorted_by_paint
     ]
     bar_colors_3pt = [
-        "#ec407a" if t["abbreviation"] == abbr_sel else "#f48fb1"
+        "#8faad4" if t["abbreviation"] == abbr_sel else "#cbd5e8"
         for t in sorted_by_paint
     ]
 
