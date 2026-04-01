@@ -2474,7 +2474,9 @@ def page_players():
             st.session_state["player_filters"].pop(idx)
 
         def _clear_filters():
-            st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
+            st.session_state["player_filters"] = [
+                {"col": numeric_cols[0], "op": "≥", "val": 0}
+            ]
 
         with st.form("player_filter_form"):
             filter_mode = st.radio(
