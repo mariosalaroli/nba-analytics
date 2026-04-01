@@ -1888,7 +1888,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
         margin=dict(l=60, r=20, t=10, b=10),
         plot_bgcolor="white",
         paper_bgcolor="white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.01, x=0, traceorder="normal"
+        ),
         xaxis=dict(
             showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
         ),
