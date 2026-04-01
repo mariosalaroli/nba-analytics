@@ -1655,12 +1655,12 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric(
-        "Paint",
+        "Garrafão",
         f"{team.get('pts_paint', 0)}",
         delta=f"{round((team.get('pts_paint') or 0) - avg_paint, 1):+} vs liga",
     )
     m2.metric(
-        "Mid-Range",
+        "Meia-distância",
         f"{team.get('pts_mid_range', 0)}",
         delta=f"{round((team.get('pts_mid_range') or 0) - avg_mid, 1):+} vs liga",
     )
