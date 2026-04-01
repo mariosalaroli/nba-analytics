@@ -4,6 +4,7 @@ Uso:  streamlit run app.py
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -2459,6 +2460,14 @@ def page_players():
 def main():
     cache = load_cache()
     team, page = render_sidebar(cache)
+
+    # Scroll to top on page change
+    if st.session_state.get("_current_page") != page:
+        st.session_state["_current_page"] = page
+        components.html(
+            "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
+            height=0,
+        )
 
     if page == "Visão geral":
         page_overview(team, cache["teams"])
