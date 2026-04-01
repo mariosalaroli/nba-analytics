@@ -1844,43 +1844,31 @@ def page_offensive_profile(team: dict, all_teams: dict):
     pct_mid = [t["pct_mid"] for t in sorted_teams]
     pct_3pt = [t["pct_3pt"] for t in sorted_teams]
 
+    # Ordenar traces: a zona selecionada fica à esquerda (primeiro trace)
+    all_traces = {
+        "pct_paint": ("Paint %", pct_paint, bar_colors_paint),
+        "pct_mid": ("Mid-Range %", pct_mid, bar_colors_mid),
+        "pct_3pt": ("3PT %", pct_3pt, bar_colors_3pt),
+    }
+    trace_order = [sort_key] + [
+        k for k in ["pct_paint", "pct_mid", "pct_3pt"] if k != sort_key
+    ]
+
     fig_pct = go.Figure()
-    fig_pct.add_trace(
-        go.Bar(
-            name="Paint %",
-            y=team_names,
-            x=pct_paint,
-            orientation="h",
-            marker_color=bar_colors_paint,
-            text=[f"{v:.0f}%" for v in pct_paint],
-            textposition="inside",
-            textfont=dict(size=9, family="DM Mono", color="white"),
+    for tk in trace_order:
+        tname, tvals, tcolors = all_traces[tk]
+        fig_pct.add_trace(
+            go.Bar(
+                name=tname,
+                y=team_names,
+                x=tvals,
+                orientation="h",
+                marker_color=tcolors,
+                text=[f"{v:.0f}%" for v in tvals],
+                textposition="inside",
+                textfont=dict(size=9, family="DM Mono", color="white"),
+            )
         )
-    )
-    fig_pct.add_trace(
-        go.Bar(
-            name="Mid-Range %",
-            y=team_names,
-            x=pct_mid,
-            orientation="h",
-            marker_color=bar_colors_mid,
-            text=[f"{v:.0f}%" for v in pct_mid],
-            textposition="inside",
-            textfont=dict(size=9, family="DM Mono", color="white"),
-        )
-    )
-    fig_pct.add_trace(
-        go.Bar(
-            name="3PT %",
-            y=team_names,
-            x=pct_3pt,
-            orientation="h",
-            marker_color=bar_colors_3pt,
-            text=[f"{v:.0f}%" for v in pct_3pt],
-            textposition="inside",
-            textfont=dict(size=9, family="DM Mono", color="white"),
-        )
-    )
     fig_pct.update_layout(
         barmode="stack",
         height=max(600, len(team_names) * 24),
