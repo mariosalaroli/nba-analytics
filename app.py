@@ -2529,20 +2529,19 @@ def page_players():
                         label_visibility="collapsed",
                     )
 
-            st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
-
-            fc_add, fc_del, fc_clear = st.columns([1, 1, 1])
-            with fc_add:
+            btn1, btn2, btn3, btn4 = st.columns([2, 2, 2, 3])
+            with btn1:
+                st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
+            with btn2:
+                st.form_submit_button("🗑️ Limpar filtros", on_click=_clear_filters)
+            with btn4:
                 st.form_submit_button("➕ Adicionar filtro", on_click=_add_filter)
-            with fc_del:
                 if len(st.session_state["player_filters"]) > 1:
                     st.form_submit_button(
                         "➖ Remover último",
                         on_click=_remove_filter,
                         args=(len(st.session_state["player_filters"]) - 1,),
                     )
-            with fc_clear:
-                st.form_submit_button("🗑️ Limpar filtros", on_click=_clear_filters)
 
         # Aplicar filtros salvos
         df_filtered = df_all.copy()
