@@ -2451,7 +2451,91 @@ def page_players():
         return pd.DataFrame(rows)
 
     df_all = _all_players_df()
-    st.dataframe(df_all, width="stretch", hide_index=True, height=600)
+
+    # ── Filtros dinâmicos ──
+    numeric_cols = [
+        c
+        for c in df_all.columns
+        if c not in ("Jogador", "Time") and pd.api.types.is_numeric_dtype(df_all[c])
+    ]
+    operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
+
+    if "player_filters" not in st.session_state:
+        st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20.0}]
+
+    def _add_filter():
+        st.session_state["player_filters"].append(
+            {"col": numeric_cols[0], "op": "≥", "val": 0.0}
+        )
+
+    def _remove_filter(idx):
+        st.session_state["player_filters"].pop(idx)
+
+    filter_mode = st.radio(
+        "Combinar filtros com",
+        options=["E (todos)", "OU (qualquer)"],
+        index=0,
+        horizontal=True,
+        key="filter_mode",
+    )
+
+    for i, f in enumerate(st.session_state["player_filters"]):
+        fc1, fc2, fc3, fc4 = st.columns([3, 2, 3, 1])
+        with fc1:
+            f["col"] = st.selectbox(
+                "Coluna",
+                numeric_cols,
+                index=numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0,
+                key=f"fcol_{i}",
+                label_visibility="collapsed",
+            )
+        with fc2:
+            f["op"] = st.selectbox(
+                "Op",
+                list(operators.keys()),
+                index=(
+                    list(operators.keys()).index(f["op"]) if f["op"] in operators else 0
+                ),
+                key=f"fop_{i}",
+                label_visibility="collapsed",
+            )
+        with fc3:
+            f["val"] = st.number_input(
+                "Valor",
+                value=float(f["val"]),
+                step=0.1,
+                format="%.1f",
+                key=f"fval_{i}",
+                label_visibility="collapsed",
+            )
+        with fc4:
+            if len(st.session_state["player_filters"]) > 1:
+                st.button("✕", key=f"fdel_{i}", on_click=_remove_filter, args=(i,))
+
+    st.button("＋ Adicionar filtro", on_click=_add_filter, key="add_filter")
+
+    # Aplicar filtros
+    df_filtered = df_all.copy()
+    masks = []
+    for f in st.session_state["player_filters"]:
+        col, op, val = f["col"], f["op"], f["val"]
+        if col in df_filtered.columns:
+            method = getattr(df_filtered[col], operators[op])
+            masks.append(method(val))
+
+    if masks:
+        if filter_mode == "E (todos)":
+            combined = masks[0]
+            for m in masks[1:]:
+                combined = combined & m
+        else:
+            combined = masks[0]
+            for m in masks[1:]:
+                combined = combined | m
+        df_filtered = df_filtered[combined]
+
+    st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
+    st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
