@@ -2452,131 +2452,127 @@ def page_players():
 
     df_all = _all_players_df()
 
-    # ── Filtros dinâmicos (fragment = só reroda esta seção) ──
-    @st.fragment
-    def _player_filters_fragment():
-        EMPTY = "—"
-        numeric_cols = [EMPTY] + [
-            c
-            for c in df_all.columns
-            if c not in ("Jogador", "Time") and pd.api.types.is_numeric_dtype(df_all[c])
-        ]
-        operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
+    # ── Filtros dinâmicos ──
+    EMPTY = "—"
+    numeric_cols = [EMPTY] + [
+        c
+        for c in df_all.columns
+        if c not in ("Jogador", "Time") and pd.api.types.is_numeric_dtype(df_all[c])
+    ]
+    operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
 
-        if "player_filters" not in st.session_state:
-            st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20.0}]
+    if "player_filters" not in st.session_state:
+        st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20.0}]
 
-        def _add_filter():
-            st.session_state["player_filters"].append(
-                {"col": EMPTY, "op": "≥", "val": 0.0}
-            )
+    def _add_filter():
+        st.session_state["player_filters"].append({"col": EMPTY, "op": "≥", "val": 0.0})
 
-        def _remove_filter(idx):
-            st.session_state["player_filters"].pop(idx)
+    def _remove_filter(idx):
+        # Limpar key do widget removido
+        st.session_state.pop(f"fcol_{idx}", None)
+        st.session_state.pop(f"fop_{idx}", None)
+        st.session_state.pop(f"fval_{idx}", None)
+        st.session_state["player_filters"].pop(idx)
 
-        def _clear_filters():
-            # Limpar keys dos widgets existentes
-            n = len(st.session_state["player_filters"])
-            for i in range(n):
-                st.session_state.pop(f"fcol_{i}", None)
-                st.session_state.pop(f"fop_{i}", None)
-                st.session_state.pop(f"fval_{i}", None)
-            st.session_state["player_filters"] = [{"col": EMPTY, "op": "≥", "val": 0.0}]
+    def _clear_filters():
+        # Limpar todas as widget keys + forçar rerun limpo
+        n = len(st.session_state.get("player_filters", []))
+        for i in range(n):
+            st.session_state.pop(f"fcol_{i}", None)
+            st.session_state.pop(f"fop_{i}", None)
+            st.session_state.pop(f"fval_{i}", None)
+        st.session_state["player_filters"] = [{"col": EMPTY, "op": "≥", "val": 0.0}]
 
-        with st.form("player_filter_form"):
-            filter_mode = st.radio(
-                "Combinar filtros com",
-                options=["E (todos)", "OU (qualquer)"],
-                index=0,
-                horizontal=True,
-                key="filter_mode",
-            )
+    with st.form("player_filter_form"):
+        filter_mode = st.radio(
+            "Combinar filtros com",
+            options=["E (todos)", "OU (qualquer)"],
+            index=0,
+            horizontal=True,
+            key="filter_mode",
+        )
 
-            for i, f in enumerate(st.session_state["player_filters"]):
-                fc1, fc2, fc3 = st.columns([3, 2, 3])
-                with fc1:
-                    f["col"] = st.selectbox(
-                        "Coluna",
-                        numeric_cols,
-                        index=(
-                            numeric_cols.index(f["col"])
-                            if f["col"] in numeric_cols
-                            else 0
-                        ),
-                        key=f"fcol_{i}",
-                        label_visibility="collapsed",
-                    )
-                with fc2:
-                    f["op"] = st.selectbox(
-                        "Op",
-                        list(operators.keys()),
-                        index=(
-                            list(operators.keys()).index(f["op"])
-                            if f["op"] in operators
-                            else 0
-                        ),
-                        key=f"fop_{i}",
-                        label_visibility="collapsed",
-                    )
-                with fc3:
-                    f["val"] = st.number_input(
-                        "Valor",
-                        value=float(f["val"]),
-                        step=1.0,
-                        format="%.1f",
-                        key=f"fval_{i}",
-                        label_visibility="collapsed",
-                    )
+        for i, f in enumerate(st.session_state["player_filters"]):
+            fc1, fc2, fc3 = st.columns([3, 2, 3])
+            with fc1:
+                f["col"] = st.selectbox(
+                    "Coluna",
+                    numeric_cols,
+                    index=(
+                        numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0
+                    ),
+                    key=f"fcol_{i}",
+                    label_visibility="collapsed",
+                )
+            with fc2:
+                f["op"] = st.selectbox(
+                    "Op",
+                    list(operators.keys()),
+                    index=(
+                        list(operators.keys()).index(f["op"])
+                        if f["op"] in operators
+                        else 0
+                    ),
+                    key=f"fop_{i}",
+                    label_visibility="collapsed",
+                )
+            with fc3:
+                f["val"] = st.number_input(
+                    "Valor",
+                    value=float(f["val"]),
+                    step=1.0,
+                    format="%.1f",
+                    key=f"fval_{i}",
+                    label_visibility="collapsed",
+                )
 
-            has_remove = len(st.session_state["player_filters"]) > 1
-            btn1, btn2, _, btn3, btn4 = st.columns([1.5, 1, 6, 1.5, 1.5])
-            with btn1:
-                submitted = st.form_submit_button("🔍 Filtrar")
-            with btn2:
-                st.form_submit_button("🗑️ Limpar", on_click=_clear_filters)
-            with btn3:
-                if has_remove:
-                    st.form_submit_button(
-                        "➖ Remover",
-                        on_click=_remove_filter,
-                        args=(len(st.session_state["player_filters"]) - 1,),
-                    )
-            with btn4:
-                st.form_submit_button("➕ Adicionar", on_click=_add_filter)
+        has_remove = len(st.session_state["player_filters"]) > 1
+        btn1, btn2, _, btn3, btn4 = st.columns([1.5, 1, 6, 1.5, 1.5])
+        with btn1:
+            submitted = st.form_submit_button("🔍 Filtrar")
+        with btn2:
+            st.form_submit_button("🗑️ Limpar", on_click=_clear_filters)
+        with btn3:
+            if has_remove:
+                st.form_submit_button(
+                    "➖ Remover",
+                    on_click=_remove_filter,
+                    args=(len(st.session_state["player_filters"]) - 1,),
+                )
+        with btn4:
+            st.form_submit_button("➕ Adicionar", on_click=_add_filter)
 
-        # Aplicar filtros lendo direto das keys dos widgets (valores atuais)
-        df_filtered = df_all.copy()
-        n_filters = len(st.session_state["player_filters"])
-        masks = []
-        mode = st.session_state.get("filter_mode", "E (todos)")
-        for i in range(n_filters):
-            col = st.session_state.get(f"fcol_{i}")
-            op = st.session_state.get(f"fop_{i}")
-            val = st.session_state.get(f"fval_{i}")
-            if (
-                col
-                and col != EMPTY
-                and op
-                and val is not None
-                and col in df_filtered.columns
-            ):
-                method = getattr(df_filtered[col], operators[op])
-                masks.append(method(val))
-        if masks:
-            if mode == "E (todos)":
-                combined = masks[0]
-                for m in masks[1:]:
-                    combined = combined & m
-            else:
-                combined = masks[0]
-                for m in masks[1:]:
-                    combined = combined | m
-            df_filtered = df_filtered[combined]
+    # Aplicar filtros lendo direto das keys dos widgets (valores atuais)
+    df_filtered = df_all.copy()
+    n_filters = len(st.session_state["player_filters"])
+    masks = []
+    mode = st.session_state.get("filter_mode", "E (todos)")
+    for i in range(n_filters):
+        col = st.session_state.get(f"fcol_{i}")
+        op = st.session_state.get(f"fop_{i}")
+        val = st.session_state.get(f"fval_{i}")
+        if (
+            col
+            and col != EMPTY
+            and op
+            and val is not None
+            and col in df_filtered.columns
+        ):
+            method = getattr(df_filtered[col], operators[op])
+            masks.append(method(val))
+    if masks:
+        if mode == "E (todos)":
+            combined = masks[0]
+            for m in masks[1:]:
+                combined = combined & m
+        else:
+            combined = masks[0]
+            for m in masks[1:]:
+                combined = combined | m
+        df_filtered = df_filtered[combined]
 
-        st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
-        st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
-
-    _player_filters_fragment()
+    st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
+    st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
