@@ -2501,7 +2501,9 @@ def page_players():
                         "Coluna",
                         numeric_cols,
                         index=(
-                            numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0
+                            numeric_cols.index(f["col"])
+                            if f["col"] in numeric_cols
+                            else 0
                         ),
                         key=f"fcol_{i}",
                         label_visibility="collapsed",
@@ -2529,19 +2531,18 @@ def page_players():
 
             st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
 
-        fc_add, fc_del, fc_clear = st.columns([1, 1, 1])
-        with fc_add:
-            st.button("＋ Adicionar filtro", on_click=_add_filter, key="add_filter")
-        with fc_del:
-            if len(st.session_state["player_filters"]) > 1:
-                st.button(
-                    "✕ Remover último",
-                    on_click=_remove_filter,
-                    args=(len(st.session_state["player_filters"]) - 1,),
-                    key="del_filter",
-                )
-        with fc_clear:
-            st.button("🗑 Limpar filtros", on_click=_clear_filters, key="clear_filter")
+            fc_add, fc_del, fc_clear = st.columns([1, 1, 1])
+            with fc_add:
+                st.form_submit_button("➕ Adicionar filtro", on_click=_add_filter)
+            with fc_del:
+                if len(st.session_state["player_filters"]) > 1:
+                    st.form_submit_button(
+                        "➖ Remover último",
+                        on_click=_remove_filter,
+                        args=(len(st.session_state["player_filters"]) - 1,),
+                    )
+            with fc_clear:
+                st.form_submit_button("🗑️ Limpar filtros", on_click=_clear_filters)
 
         # Aplicar filtros salvos
         df_filtered = df_all.copy()
