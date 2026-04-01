@@ -1808,18 +1808,43 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # Ordenar por pts total
-    sorted_teams = sorted(all_teams.values(), key=lambda t: t.get("pts") or 0)
-    team_names = [t["abbreviation"] for t in sorted_teams]
+    # Ordenar por pts total (maior primeiro) e rankear
+    sorted_all = sorted(
+        all_teams.values(), key=lambda t: t.get("pts") or 0, reverse=True
+    )
+    for i, t in enumerate(sorted_all, 1):
+        t["_rank_pts"] = i
+
+    # Top 10 (ou 9 + time selecionado se não estiver no top 10)
+    top10_abbrs = [t["abbreviation"] for t in sorted_all[:10]]
+    in_top = abbr_sel in top10_abbrs
+    if in_top:
+        display_teams = sorted_all[:10]
+    else:
+        display_teams = sorted_all[:9] + [
+            t for t in sorted_all if t["abbreviation"] == abbr_sel
+        ]
+
+    # Ordenar para exibição (menor pts embaixo, maior em cima — horizontal bar)
+    display_teams = sorted(display_teams, key=lambda t: t.get("pts") or 0)
+
+    team_names = [
+        (
+            f"{t['abbreviation']} ({t['_rank_pts']}º)"
+            if t["abbreviation"] == abbr_sel
+            else t["abbreviation"]
+        )
+        for t in display_teams
+    ]
 
     bar_colors_paint = [
-        "#E65100" if t["abbreviation"] == abbr_sel else "#FF9800" for t in sorted_teams
+        "#E65100" if t["abbreviation"] == abbr_sel else "#FF9800" for t in display_teams
     ]
     bar_colors_mid = [
-        "#1565C0" if t["abbreviation"] == abbr_sel else "#64B5F6" for t in sorted_teams
+        "#1565C0" if t["abbreviation"] == abbr_sel else "#64B5F6" for t in display_teams
     ]
     bar_colors_3pt = [
-        "#2E7D32" if t["abbreviation"] == abbr_sel else "#81C784" for t in sorted_teams
+        "#2E7D32" if t["abbreviation"] == abbr_sel else "#81C784" for t in display_teams
     ]
 
     # ── Gráfico: Distribuição proporcional (% stacked) ──
@@ -1827,9 +1852,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
         '<div class="section-header">Distribuição proporcional — % dos pontos por zona</div>',
         unsafe_allow_html=True,
     )
-    pct_paint = [t["pct_paint"] for t in sorted_teams]
-    pct_mid = [t["pct_mid"] for t in sorted_teams]
-    pct_3pt = [t["pct_3pt"] for t in sorted_teams]
+    pct_paint = [t["pct_paint"] for t in display_teams]
+    pct_mid = [t["pct_mid"] for t in display_teams]
+    pct_3pt = [t["pct_3pt"] for t in display_teams]
 
     fig_pct = go.Figure()
     fig_pct.add_trace(
@@ -1870,8 +1895,8 @@ def page_offensive_profile(team: dict, all_teams: dict):
     )
     fig_pct.update_layout(
         barmode="stack",
-        height=max(600, len(team_names) * 24),
-        margin=dict(l=60, r=20, t=10, b=10),
+        height=max(300, len(team_names) * 28),
+        margin=dict(l=70, r=20, t=10, b=10),
         plot_bgcolor="white",
         paper_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
