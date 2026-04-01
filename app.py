@@ -1808,18 +1808,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Gráfico 3: Stacked bar — DNA ofensivo por zona (todos os times) ──
-    st.markdown(
-        '<div class="section-header">DNA ofensivo — Distribuição de pontos por zona (pts/jogo)</div>',
-        unsafe_allow_html=True,
-    )
-
     # Ordenar por pts total
     sorted_teams = sorted(all_teams.values(), key=lambda t: t.get("pts") or 0)
     team_names = [t["abbreviation"] for t in sorted_teams]
-    paint_vals = [t.get("pts_paint") or 0 for t in sorted_teams]
-    mid_vals = [t.get("pts_mid_range") or 0 for t in sorted_teams]
-    three_vals = [t["pts_3pt"] for t in sorted_teams]
 
     bar_colors_paint = [
         "#E65100" if t["abbreviation"] == abbr_sel else "#FF9800" for t in sorted_teams
@@ -1831,52 +1822,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
         "#2E7D32" if t["abbreviation"] == abbr_sel else "#81C784" for t in sorted_teams
     ]
 
-    fig_dna = go.Figure()
-    fig_dna.add_trace(
-        go.Bar(
-            name="Paint",
-            y=team_names,
-            x=paint_vals,
-            orientation="h",
-            marker_color=bar_colors_paint,
-            textfont=dict(size=9, family="DM Mono"),
-        )
-    )
-    fig_dna.add_trace(
-        go.Bar(
-            name="Mid-Range",
-            y=team_names,
-            x=mid_vals,
-            orientation="h",
-            marker_color=bar_colors_mid,
-            textfont=dict(size=9, family="DM Mono"),
-        )
-    )
-    fig_dna.add_trace(
-        go.Bar(
-            name="3 Pontos",
-            y=team_names,
-            x=three_vals,
-            orientation="h",
-            marker_color=bar_colors_3pt,
-            textfont=dict(size=9, family="DM Mono"),
-        )
-    )
-    fig_dna.update_layout(
-        barmode="stack",
-        height=max(600, len(team_names) * 24),
-        margin=dict(l=60, r=20, t=10, b=10),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
-        xaxis=dict(showgrid=True, gridcolor="#f0f0f0", title="Pontos / jogo"),
-        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), automargin=True),
-    )
-    st.plotly_chart(fig_dna, width="stretch", config={"displayModeBar": False})
-
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-
-    # ── Gráfico 4: Distribuição proporcional (% stacked) ──
+    # ── Gráfico: Distribuição proporcional (% stacked) ──
     st.markdown(
         '<div class="section-header">Distribuição proporcional — % dos pontos por zona</div>',
         unsafe_allow_html=True,
@@ -1932,7 +1878,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
         xaxis=dict(
             showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
         ),
-        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), automargin=True),
+        yaxis=dict(
+            tickfont=dict(size=11, family="DM Mono"), automargin=True, tickangle=0
+        ),
     )
     st.plotly_chart(fig_pct, width="stretch", config={"displayModeBar": False})
 
