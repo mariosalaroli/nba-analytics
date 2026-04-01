@@ -2461,78 +2461,102 @@ def page_players():
     operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
 
     if "player_filters" not in st.session_state:
-        st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20.0}]
+        st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
+    if "player_filters_applied" not in st.session_state:
+        st.session_state["player_filters_applied"] = None
 
     def _add_filter():
         st.session_state["player_filters"].append(
-            {"col": numeric_cols[0], "op": "≥", "val": 0.0}
+            {"col": numeric_cols[0], "op": "≥", "val": 0}
         )
 
     def _remove_filter(idx):
         st.session_state["player_filters"].pop(idx)
 
-    filter_mode = st.radio(
-        "Combinar filtros com",
-        options=["E (todos)", "OU (qualquer)"],
-        index=0,
-        horizontal=True,
-        key="filter_mode",
-    )
+    def _apply_filters():
+        st.session_state["player_filters_applied"] = {
+            "filters": [dict(f) for f in st.session_state["player_filters"]],
+            "mode": st.session_state.get("filter_mode", "E (todos)"),
+        }
 
-    for i, f in enumerate(st.session_state["player_filters"]):
-        fc1, fc2, fc3, fc4 = st.columns([3, 2, 3, 1])
-        with fc1:
-            f["col"] = st.selectbox(
-                "Coluna",
-                numeric_cols,
-                index=numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0,
-                key=f"fcol_{i}",
-                label_visibility="collapsed",
-            )
-        with fc2:
-            f["op"] = st.selectbox(
-                "Op",
-                list(operators.keys()),
-                index=(
-                    list(operators.keys()).index(f["op"]) if f["op"] in operators else 0
-                ),
-                key=f"fop_{i}",
-                label_visibility="collapsed",
-            )
-        with fc3:
-            f["val"] = st.number_input(
-                "Valor",
-                value=float(f["val"]),
-                step=0.1,
-                format="%.1f",
-                key=f"fval_{i}",
-                label_visibility="collapsed",
-            )
-        with fc4:
-            if len(st.session_state["player_filters"]) > 1:
-                st.button("✕", key=f"fdel_{i}", on_click=_remove_filter, args=(i,))
+    with st.form("player_filter_form"):
+        filter_mode = st.radio(
+            "Combinar filtros com",
+            options=["E (todos)", "OU (qualquer)"],
+            index=0,
+            horizontal=True,
+            key="filter_mode",
+        )
 
-    st.button("＋ Adicionar filtro", on_click=_add_filter, key="add_filter")
+        for i, f in enumerate(st.session_state["player_filters"]):
+            fc1, fc2, fc3, fc4 = st.columns([3, 2, 3, 1])
+            with fc1:
+                f["col"] = st.selectbox(
+                    "Coluna",
+                    numeric_cols,
+                    index=(
+                        numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0
+                    ),
+                    key=f"fcol_{i}",
+                    label_visibility="collapsed",
+                )
+            with fc2:
+                f["op"] = st.selectbox(
+                    "Op",
+                    list(operators.keys()),
+                    index=(
+                        list(operators.keys()).index(f["op"])
+                        if f["op"] in operators
+                        else 0
+                    ),
+                    key=f"fop_{i}",
+                    label_visibility="collapsed",
+                )
+            with fc3:
+                f["val"] = st.number_input(
+                    "Valor",
+                    value=int(f["val"]),
+                    step=1,
+                    key=f"fval_{i}",
+                    label_visibility="collapsed",
+                )
 
-    # Aplicar filtros
+        btn_col1, btn_col2 = st.columns([1, 1])
+        with btn_col1:
+            st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
+
+    fc_add, fc_del = st.columns([1, 1])
+    with fc_add:
+        st.button("＋ Adicionar filtro", on_click=_add_filter, key="add_filter")
+    with fc_del:
+        if len(st.session_state["player_filters"]) > 1:
+            st.button(
+                "✕ Remover último",
+                on_click=_remove_filter,
+                args=(len(st.session_state["player_filters"]) - 1,),
+                key="del_filter",
+            )
+
+    # Aplicar filtros salvos
     df_filtered = df_all.copy()
-    masks = []
-    for f in st.session_state["player_filters"]:
-        col, op, val = f["col"], f["op"], f["val"]
-        if col in df_filtered.columns:
-            method = getattr(df_filtered[col], operators[op])
-            masks.append(method(val))
-
-    if masks:
-        if filter_mode == "E (todos)":
-            combined = masks[0]
-            for m in masks[1:]:
-                combined = combined & m
-        else:
-            combined = masks[0]
-            for m in masks[1:]:
-                combined = combined | m
-        df_filtered = df_filtered[combined]
+    applied = st.session_state.get("player_filters_applied")
+    if applied:
+        masks = []
+        for f in applied["filters"]:
+            col, op, val = f["col"], f["op"], f["val"]
+            if col in df_filtered.columns:
+                method = getattr(df_filtered[col], operators[op])
+                masks.append(method(val))
+        if masks:
+            if applied["mode"] == "E (todos)":
+                combined = masks[0]
+                for m in masks[1:]:
+                    combined = combined & m
+            else:
+                combined = masks[0]
+                for m in masks[1:]:
+                    combined = combined | m
+            df_filtered = df_filtered[combined]
 
     st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
     st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
