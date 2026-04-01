@@ -1670,7 +1670,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
         delta=f"{round(team['pts_3pt'] - avg_3pt, 1):+} vs liga",
     )
     m4.metric(
-        "Fast Break",
+        "Em transição",
         f"{team.get('pts_fb', 0)}",
         delta=f"{round((team.get('pts_fb') or 0) - avg_fb, 1):+} vs liga",
     )
@@ -1691,7 +1691,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             '<div class="section-header">Radar — Perfil de pontuação</div>',
             unsafe_allow_html=True,
         )
-        radar_labels = ["Paint", "Mid-Range", "3 Pontos", "Fast Break", "2ª Chance"]
+        radar_labels = ["Paint", "Mid-Range", "3 Pontos", "Em transição", "2ª Chance"]
         radar_keys = [
             "pts_paint",
             "pts_mid_range",
@@ -1761,7 +1761,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             '<div class="section-header">Time vs Média da Liga (pts/jogo)</div>',
             unsafe_allow_html=True,
         )
-        cat_labels = ["Paint", "Mid-Range", "3 Pontos", "Fast Break", "2ª Chance"]
+        cat_labels = ["Paint", "Mid-Range", "3 Pontos", "Em transição", "2ª Chance"]
         team_vals = [
             team.get("pts_paint") or 0,
             team.get("pts_mid_range") or 0,
@@ -1911,7 +1911,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
     # ── Gráfico 5: Scatter — Paint vs 3PT ──
-    # ── Gráfico 6: Scatter — Fast Break vs 2ª Chance ──
+    # ── Gráfico 6: Scatter — Em transição vs 2ª Chance ──
     sc_left, sc_right = st.columns(2)
 
     with sc_left:
@@ -2005,7 +2005,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     with sc_right:
         st.markdown(
-            '<div class="section-header">Fast Break vs 2ª Chance (pts/jogo)</div>',
+            '<div class="section-header">Em transição vs 2ª Chance (pts/jogo)</div>',
             unsafe_allow_html=True,
         )
         scatter_df2 = pd.DataFrame(
@@ -2030,7 +2030,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
                 text=other2["Time"],
                 textposition="top center",
                 textfont=dict(size=9, family="DM Mono", color="#888"),
-                hovertemplate="<b>%{text}</b><br>Fast Break: %{x:.1f}<br>2ª Chance: %{y:.1f}<extra></extra>",
+                hovertemplate="<b>%{text}</b><br>Em transição: %{x:.1f}<br>2ª Chance: %{y:.1f}<extra></extra>",
                 showlegend=False,
             )
         )
@@ -2044,7 +2044,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
                 text=sel2["Time"],
                 textposition="top center",
                 textfont=dict(size=11, family="DM Mono", color=color, weight="bold"),
-                hovertemplate="<b>%{text}</b><br>Fast Break: %{x:.1f}<br>2ª Chance: %{y:.1f}<extra></extra>",
+                hovertemplate="<b>%{text}</b><br>Em transição: %{x:.1f}<br>2ª Chance: %{y:.1f}<extra></extra>",
                 showlegend=False,
             )
         )
@@ -2074,7 +2074,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             plot_bgcolor="white",
             paper_bgcolor="white",
             xaxis=dict(
-                title="Pts Fast Break / jogo",
+                title="Pts em transição / jogo",
                 showgrid=True,
                 gridcolor="#f5f5f5",
                 tickfont=dict(size=10),
