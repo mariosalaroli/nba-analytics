@@ -2455,7 +2455,8 @@ def page_players():
     # ── Filtros dinâmicos (fragment = só reroda esta seção) ──
     @st.fragment
     def _player_filters_fragment():
-        numeric_cols = [
+        EMPTY = "—"
+        numeric_cols = [EMPTY] + [
             c
             for c in df_all.columns
             if c not in ("Jogador", "Time") and pd.api.types.is_numeric_dtype(df_all[c])
@@ -2467,16 +2468,14 @@ def page_players():
 
         def _add_filter():
             st.session_state["player_filters"].append(
-                {"col": numeric_cols[0], "op": "≥", "val": 0}
+                {"col": EMPTY, "op": "≥", "val": 0}
             )
 
         def _remove_filter(idx):
             st.session_state["player_filters"].pop(idx)
 
         def _clear_filters():
-            st.session_state["player_filters"] = [
-                {"col": numeric_cols[0], "op": "≥", "val": 0}
-            ]
+            st.session_state["player_filters"] = [{"col": EMPTY, "op": "≥", "val": 0}]
 
         with st.form("player_filter_form"):
             filter_mode = st.radio(
@@ -2547,7 +2546,13 @@ def page_players():
             col = st.session_state.get(f"fcol_{i}")
             op = st.session_state.get(f"fop_{i}")
             val = st.session_state.get(f"fval_{i}")
-            if col and op and val is not None and col in df_filtered.columns:
+            if (
+                col
+                and col != EMPTY
+                and op
+                and val is not None
+                and col in df_filtered.columns
+            ):
                 method = getattr(df_filtered[col], operators[op])
                 masks.append(method(val))
         if masks:
