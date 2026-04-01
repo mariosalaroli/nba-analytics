@@ -1844,10 +1844,10 @@ def page_offensive_profile(team: dict, all_teams: dict):
     pct_mid = [t["pct_mid"] for t in sorted_teams]
     pct_3pt = [t["pct_3pt"] for t in sorted_teams]
 
-    # Traces sempre na ordem fixa Paint → Mid → 3PT (define legenda e barras)
-    fig_pct = go.Figure()
-    fig_pct.add_trace(
-        go.Bar(
+    # Traces: ordem dinâmica para barras (sort selecionado fica à esquerda),
+    # legendrank fixo para manter legenda sempre Paint | Mid | 3PT
+    all_traces = {
+        "pct_paint": go.Bar(
             name="Paint %",
             y=team_names,
             x=pct_paint,
@@ -1856,10 +1856,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
             text=[f"{v:.0f}%" for v in pct_paint],
             textposition="inside",
             textfont=dict(size=9, family="DM Mono", color="white"),
-        )
-    )
-    fig_pct.add_trace(
-        go.Bar(
+            legendrank=1,
+        ),
+        "pct_mid": go.Bar(
             name="Mid-Range %",
             y=team_names,
             x=pct_mid,
@@ -1868,10 +1867,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
             text=[f"{v:.0f}%" for v in pct_mid],
             textposition="inside",
             textfont=dict(size=9, family="DM Mono", color="white"),
-        )
-    )
-    fig_pct.add_trace(
-        go.Bar(
+            legendrank=2,
+        ),
+        "pct_3pt": go.Bar(
             name="3PT %",
             y=team_names,
             x=pct_3pt,
@@ -1880,8 +1878,15 @@ def page_offensive_profile(team: dict, all_teams: dict):
             text=[f"{v:.0f}%" for v in pct_3pt],
             textposition="inside",
             textfont=dict(size=9, family="DM Mono", color="white"),
-        )
-    )
+            legendrank=3,
+        ),
+    }
+    trace_order = [sort_key] + [
+        k for k in ["pct_paint", "pct_mid", "pct_3pt"] if k != sort_key
+    ]
+    fig_pct = go.Figure()
+    for key in trace_order:
+        fig_pct.add_trace(all_traces[key])
     fig_pct.update_layout(
         barmode="stack",
         height=max(600, len(team_names) * 24),
@@ -1889,7 +1894,11 @@ def page_offensive_profile(team: dict, all_teams: dict):
         plot_bgcolor="white",
         paper_bgcolor="white",
         legend=dict(
-            orientation="h", yanchor="bottom", y=1.01, x=0, traceorder="normal"
+            orientation="h",
+            yanchor="bottom",
+            y=1.01,
+            x=0,
+            traceorder="reversed+grouped",
         ),
         xaxis=dict(
             showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
