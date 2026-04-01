@@ -1838,13 +1838,13 @@ def page_offensive_profile(team: dict, all_teams: dict):
     ]
 
     bar_colors_paint = [
-        "#E65100" if t["abbreviation"] == abbr_sel else "#FF9800" for t in display_teams
+        "#4878d0" if t["abbreviation"] == abbr_sel else "#a1b8e4" for t in display_teams
     ]
     bar_colors_mid = [
-        "#1565C0" if t["abbreviation"] == abbr_sel else "#64B5F6" for t in display_teams
+        "#ee854a" if t["abbreviation"] == abbr_sel else "#f5c4a1" for t in display_teams
     ]
     bar_colors_3pt = [
-        "#2E7D32" if t["abbreviation"] == abbr_sel else "#81C784" for t in display_teams
+        "#6acc64" if t["abbreviation"] == abbr_sel else "#b5e2b0" for t in display_teams
     ]
 
     # ── Gráfico: Distribuição proporcional (% stacked) ──
