@@ -1845,6 +1845,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
     pct_3pt = [t["pct_3pt"] for t in sorted_teams]
 
     # Ordenar traces: a zona selecionada fica à esquerda (primeiro trace)
+    legend_rank = {"pct_paint": 1, "pct_mid": 2, "pct_3pt": 3}
     all_traces = {
         "pct_paint": ("Paint %", pct_paint, bar_colors_paint),
         "pct_mid": ("Mid-Range %", pct_mid, bar_colors_mid),
@@ -1867,6 +1868,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
                 text=[f"{v:.0f}%" for v in tvals],
                 textposition="inside",
                 textfont=dict(size=9, family="DM Mono", color="white"),
+                legendrank=legend_rank[tk],
             )
         )
     fig_pct.update_layout(
