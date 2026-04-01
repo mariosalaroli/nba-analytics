@@ -1631,10 +1631,12 @@ def page_offensive_profile(team: dict, all_teams: dict):
     # Preparar dados de zonas para todos os times
     for t in all_teams.values():
         t["pts_3pt"] = round((t.get("fg3m") or 0) * 3, 1)
+        t["pts_ft"] = round(t.get("ftm") or 0, 1)
         pts = t.get("pts") or 1
         t["pct_paint"] = round((t.get("pts_paint") or 0) / pts * 100, 1)
         t["pct_mid"] = round((t.get("pts_mid_range") or 0) / pts * 100, 1)
         t["pct_3pt"] = round(t["pts_3pt"] / pts * 100, 1)
+        t["pct_ft"] = round(t["pts_ft"] / pts * 100, 1)
         t["pct_fb"] = round((t.get("pts_fb") or 0) / pts * 100, 1)
         t["pct_2nd"] = round((t.get("pts_2nd_chance") or 0) / pts * 100, 1)
 
@@ -1643,6 +1645,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
     avg_paint = round(sum(t.get("pts_paint") or 0 for t in all_teams.values()) / n, 1)
     avg_mid = round(sum(t.get("pts_mid_range") or 0 for t in all_teams.values()) / n, 1)
     avg_3pt = round(sum(t["pts_3pt"] for t in all_teams.values()) / n, 1)
+    avg_ft = round(sum(t["pts_ft"] for t in all_teams.values()) / n, 1)
     avg_fb = round(sum(t.get("pts_fb") or 0 for t in all_teams.values()) / n, 1)
     avg_2nd = round(
         sum(t.get("pts_2nd_chance") or 0 for t in all_teams.values()) / n, 1
@@ -1654,7 +1657,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
         unsafe_allow_html=True,
     )
 
-    m1, m2, m3, m4, m5 = st.columns(5)
+    m1, m2, m3, m4, m5, m6 = st.columns(6)
     m1.metric(
         "Garrafão",
         f"{team.get('pts_paint', 0)}",
@@ -1671,11 +1674,16 @@ def page_offensive_profile(team: dict, all_teams: dict):
         delta=f"{round(team['pts_3pt'] - avg_3pt, 1):+} vs liga",
     )
     m4.metric(
+        "Lance livre",
+        f"{team['pts_ft']}",
+        delta=f"{round(team['pts_ft'] - avg_ft, 1):+} vs liga",
+    )
+    m5.metric(
         "Em transição",
         f"{team.get('pts_fb', 0)}",
         delta=f"{round((team.get('pts_fb') or 0) - avg_fb, 1):+} vs liga",
     )
-    m5.metric(
+    m6.metric(
         "2ª Chance",
         f"{team.get('pts_2nd_chance', 0)}",
         delta=f"{round((team.get('pts_2nd_chance') or 0) - avg_2nd, 1):+} vs liga",
@@ -1696,6 +1704,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             "Garrafão",
             "Meia-dist.",
             "3 Pontos",
+            "Lance livre",
             "Em transição",
             "2ª Chance",
         ]
@@ -1703,6 +1712,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             "pts_paint",
             "pts_mid_range",
             "pts_3pt",
+            "pts_ft",
             "pts_fb",
             "pts_2nd_chance",
         ]
@@ -1768,15 +1778,23 @@ def page_offensive_profile(team: dict, all_teams: dict):
             '<div class="section-header">Time vs Média da Liga (pts/jogo)</div>',
             unsafe_allow_html=True,
         )
-        cat_labels = ["Garrafão", "Meia-dist.", "3 Pontos", "Em transição", "2ª Chance"]
+        cat_labels = [
+            "Garrafão",
+            "Meia-dist.",
+            "3 Pontos",
+            "Lance livre",
+            "Em transição",
+            "2ª Chance",
+        ]
         team_vals = [
             team.get("pts_paint") or 0,
             team.get("pts_mid_range") or 0,
             team["pts_3pt"],
+            team["pts_ft"],
             team.get("pts_fb") or 0,
             team.get("pts_2nd_chance") or 0,
         ]
-        liga_vals = [avg_paint, avg_mid, avg_3pt, avg_fb, avg_2nd]
+        liga_vals = [avg_paint, avg_mid, avg_3pt, avg_ft, avg_fb, avg_2nd]
 
         fig_vs = go.Figure()
         fig_vs.add_trace(
@@ -2005,6 +2023,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
         "Garrafão %": "pct_paint",
         "Meia-dist. %": "pct_mid",
         "3 Pontos %": "pct_3pt",
+        "Lance livre %": "pct_ft",
     }
     sort_label = st.radio(
         "Ordenar por",
@@ -2027,9 +2046,13 @@ def page_offensive_profile(team: dict, all_teams: dict):
     bar_colors_3pt = [
         "#8faad4" if t["abbreviation"] == abbr_sel else "#cbd5e8" for t in sorted_teams
     ]
+    bar_colors_ft = [
+        "#c47dbd" if t["abbreviation"] == abbr_sel else "#e2b6de" for t in sorted_teams
+    ]
     pct_paint = [t["pct_paint"] for t in sorted_teams]
     pct_mid = [t["pct_mid"] for t in sorted_teams]
     pct_3pt = [t["pct_3pt"] for t in sorted_teams]
+    pct_ft = [t["pct_ft"] for t in sorted_teams]
 
     # Traces: ordem dinâmica para barras (sort selecionado fica à esquerda),
     # legendrank fixo para manter legenda sempre Paint | Mid | 3PT
@@ -2070,9 +2093,21 @@ def page_offensive_profile(team: dict, all_teams: dict):
             textfont=dict(size=9, family="DM Mono", color="white"),
             legendrank=3,
         ),
+        "pct_ft": go.Bar(
+            name="Lance livre %",
+            y=team_names,
+            x=pct_ft,
+            orientation="h",
+            marker_color=bar_colors_ft,
+            text=[f"{v:.0f}%" for v in pct_ft],
+            textposition="inside",
+            textangle=0,
+            textfont=dict(size=9, family="DM Mono", color="white"),
+            legendrank=4,
+        ),
     }
     trace_order = [sort_key] + [
-        k for k in ["pct_paint", "pct_mid", "pct_3pt"] if k != sort_key
+        k for k in ["pct_paint", "pct_mid", "pct_3pt", "pct_ft"] if k != sort_key
     ]
     fig_pct = go.Figure()
     for key in trace_order:
