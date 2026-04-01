@@ -2464,18 +2464,24 @@ def page_players():
         operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
 
         if "player_filters" not in st.session_state:
-            st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
+            st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20.0}]
 
         def _add_filter():
             st.session_state["player_filters"].append(
-                {"col": EMPTY, "op": "≥", "val": 0}
+                {"col": EMPTY, "op": "≥", "val": 0.0}
             )
 
         def _remove_filter(idx):
             st.session_state["player_filters"].pop(idx)
 
         def _clear_filters():
-            st.session_state["player_filters"] = [{"col": EMPTY, "op": "≥", "val": 0}]
+            # Limpar keys dos widgets existentes
+            n = len(st.session_state["player_filters"])
+            for i in range(n):
+                st.session_state.pop(f"fcol_{i}", None)
+                st.session_state.pop(f"fop_{i}", None)
+                st.session_state.pop(f"fval_{i}", None)
+            st.session_state["player_filters"] = [{"col": EMPTY, "op": "≥", "val": 0.0}]
 
         with st.form("player_filter_form"):
             filter_mode = st.radio(
@@ -2515,8 +2521,9 @@ def page_players():
                 with fc3:
                     f["val"] = st.number_input(
                         "Valor",
-                        value=int(f["val"]),
-                        step=1,
+                        value=float(f["val"]),
+                        step=1.0,
+                        format="%.1f",
                         key=f"fval_{i}",
                         label_visibility="collapsed",
                     )
