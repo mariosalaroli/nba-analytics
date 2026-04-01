@@ -2426,7 +2426,6 @@ def page_players():
                 {
                     "Jogador": p["player_name"],
                     "Time": p["team_abbr"],
-                    "Idade": p.get("age"),
                     "GP": p["gp"],
                     "MIN": p["min"],
                     "PTS": p["pts"],
@@ -2436,6 +2435,7 @@ def page_players():
                     "BLK": p["blk"],
                     "TOV": p["tov"],
                     "3PM": p["fg3m"],
+                    "3PA": p["fg3a"],
                     "FG%": p["fg_pct"],
                     "3P%": p["fg3_pct"],
                     "FT%": p["ft_pct"],
