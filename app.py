@@ -240,9 +240,9 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
         pages = [
             "Visão geral",
             "Comparativo da Liga",
+            "Perfil ofensivo",
             "Últimos jogos",
             "Confronto direto",
-            "Perfil ofensivo",
             "Jogadores",
         ]
         # Suporte a navegação programática
