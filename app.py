@@ -2452,114 +2452,122 @@ def page_players():
 
     df_all = _all_players_df()
 
-    # ── Filtros dinâmicos ──
-    numeric_cols = [
-        c
-        for c in df_all.columns
-        if c not in ("Jogador", "Time") and pd.api.types.is_numeric_dtype(df_all[c])
-    ]
-    operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
+    # ── Filtros dinâmicos (fragment = só reroda esta seção) ──
+    @st.fragment
+    def _player_filters_fragment():
+        numeric_cols = [
+            c
+            for c in df_all.columns
+            if c not in ("Jogador", "Time") and pd.api.types.is_numeric_dtype(df_all[c])
+        ]
+        operators = {"≥": "ge", "≤": "le", ">": "gt", "<": "lt", "=": "eq"}
 
-    if "player_filters" not in st.session_state:
-        st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
-    if "player_filters_applied" not in st.session_state:
-        st.session_state["player_filters_applied"] = None
+        if "player_filters" not in st.session_state:
+            st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
+        if "player_filters_applied" not in st.session_state:
+            st.session_state["player_filters_applied"] = None
 
-    def _add_filter():
-        st.session_state["player_filters"].append(
-            {"col": numeric_cols[0], "op": "≥", "val": 0}
-        )
-
-    def _remove_filter(idx):
-        st.session_state["player_filters"].pop(idx)
-
-    def _apply_filters():
-        st.session_state["player_filters_applied"] = {
-            "filters": [dict(f) for f in st.session_state["player_filters"]],
-            "mode": st.session_state.get("filter_mode", "E (todos)"),
-        }
-
-    with st.form("player_filter_form"):
-        filter_mode = st.radio(
-            "Combinar filtros com",
-            options=["E (todos)", "OU (qualquer)"],
-            index=0,
-            horizontal=True,
-            key="filter_mode",
-        )
-
-        for i, f in enumerate(st.session_state["player_filters"]):
-            fc1, fc2, fc3, fc4 = st.columns([3, 2, 3, 1])
-            with fc1:
-                f["col"] = st.selectbox(
-                    "Coluna",
-                    numeric_cols,
-                    index=(
-                        numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0
-                    ),
-                    key=f"fcol_{i}",
-                    label_visibility="collapsed",
-                )
-            with fc2:
-                f["op"] = st.selectbox(
-                    "Op",
-                    list(operators.keys()),
-                    index=(
-                        list(operators.keys()).index(f["op"])
-                        if f["op"] in operators
-                        else 0
-                    ),
-                    key=f"fop_{i}",
-                    label_visibility="collapsed",
-                )
-            with fc3:
-                f["val"] = st.number_input(
-                    "Valor",
-                    value=int(f["val"]),
-                    step=1,
-                    key=f"fval_{i}",
-                    label_visibility="collapsed",
-                )
-
-        btn_col1, btn_col2 = st.columns([1, 1])
-        with btn_col1:
-            st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
-
-    fc_add, fc_del = st.columns([1, 1])
-    with fc_add:
-        st.button("＋ Adicionar filtro", on_click=_add_filter, key="add_filter")
-    with fc_del:
-        if len(st.session_state["player_filters"]) > 1:
-            st.button(
-                "✕ Remover último",
-                on_click=_remove_filter,
-                args=(len(st.session_state["player_filters"]) - 1,),
-                key="del_filter",
+        def _add_filter():
+            st.session_state["player_filters"].append(
+                {"col": numeric_cols[0], "op": "≥", "val": 0}
             )
 
-    # Aplicar filtros salvos
-    df_filtered = df_all.copy()
-    applied = st.session_state.get("player_filters_applied")
-    if applied:
-        masks = []
-        for f in applied["filters"]:
-            col, op, val = f["col"], f["op"], f["val"]
-            if col in df_filtered.columns:
-                method = getattr(df_filtered[col], operators[op])
-                masks.append(method(val))
-        if masks:
-            if applied["mode"] == "E (todos)":
-                combined = masks[0]
-                for m in masks[1:]:
-                    combined = combined & m
-            else:
-                combined = masks[0]
-                for m in masks[1:]:
-                    combined = combined | m
-            df_filtered = df_filtered[combined]
+        def _remove_filter(idx):
+            st.session_state["player_filters"].pop(idx)
 
-    st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
-    st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
+        def _apply_filters():
+            st.session_state["player_filters_applied"] = {
+                "filters": [dict(f) for f in st.session_state["player_filters"]],
+                "mode": st.session_state.get("filter_mode", "E (todos)"),
+            }
+
+        def _clear_filters():
+            st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
+            st.session_state["player_filters_applied"] = None
+
+        with st.form("player_filter_form"):
+            filter_mode = st.radio(
+                "Combinar filtros com",
+                options=["E (todos)", "OU (qualquer)"],
+                index=0,
+                horizontal=True,
+                key="filter_mode",
+            )
+
+            for i, f in enumerate(st.session_state["player_filters"]):
+                fc1, fc2, fc3 = st.columns([3, 2, 3])
+                with fc1:
+                    f["col"] = st.selectbox(
+                        "Coluna",
+                        numeric_cols,
+                        index=(
+                            numeric_cols.index(f["col"]) if f["col"] in numeric_cols else 0
+                        ),
+                        key=f"fcol_{i}",
+                        label_visibility="collapsed",
+                    )
+                with fc2:
+                    f["op"] = st.selectbox(
+                        "Op",
+                        list(operators.keys()),
+                        index=(
+                            list(operators.keys()).index(f["op"])
+                            if f["op"] in operators
+                            else 0
+                        ),
+                        key=f"fop_{i}",
+                        label_visibility="collapsed",
+                    )
+                with fc3:
+                    f["val"] = st.number_input(
+                        "Valor",
+                        value=int(f["val"]),
+                        step=1,
+                        key=f"fval_{i}",
+                        label_visibility="collapsed",
+                    )
+
+            st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
+
+        fc_add, fc_del, fc_clear = st.columns([1, 1, 1])
+        with fc_add:
+            st.button("＋ Adicionar filtro", on_click=_add_filter, key="add_filter")
+        with fc_del:
+            if len(st.session_state["player_filters"]) > 1:
+                st.button(
+                    "✕ Remover último",
+                    on_click=_remove_filter,
+                    args=(len(st.session_state["player_filters"]) - 1,),
+                    key="del_filter",
+                )
+        with fc_clear:
+            st.button("🗑 Limpar filtros", on_click=_clear_filters, key="clear_filter")
+
+        # Aplicar filtros salvos
+        df_filtered = df_all.copy()
+        applied = st.session_state.get("player_filters_applied")
+        if applied:
+            masks = []
+            for f in applied["filters"]:
+                col, op, val = f["col"], f["op"], f["val"]
+                if col in df_filtered.columns:
+                    method = getattr(df_filtered[col], operators[op])
+                    masks.append(method(val))
+            if masks:
+                if applied["mode"] == "E (todos)":
+                    combined = masks[0]
+                    for m in masks[1:]:
+                        combined = combined & m
+                else:
+                    combined = masks[0]
+                    for m in masks[1:]:
+                        combined = combined | m
+                df_filtered = df_filtered[combined]
+
+        st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
+        st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
+
+    _player_filters_fragment()
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
