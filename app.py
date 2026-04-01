@@ -240,9 +240,9 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
         pages = [
             "Visão geral",
             "Comparativo da Liga",
-            "Perfil ofensivo",
             "Últimos jogos",
             "Confronto direto",
+            "Perfil ofensivo",
             "Jogadores",
         ]
         # Suporte a navegação programática
@@ -1814,15 +1814,15 @@ def page_offensive_profile(team: dict, all_teams: dict):
     team_names = [t["abbreviation"] for t in sorted_by_paint]
 
     bar_colors_paint = [
-        "#4878d0" if t["abbreviation"] == abbr_sel else "#a1b8e4"
+        "#7e57c2" if t["abbreviation"] == abbr_sel else "#b39ddb"
         for t in sorted_by_paint
     ]
     bar_colors_mid = [
-        "#ee854a" if t["abbreviation"] == abbr_sel else "#f5c4a1"
+        "#78909c" if t["abbreviation"] == abbr_sel else "#b0bec5"
         for t in sorted_by_paint
     ]
     bar_colors_3pt = [
-        "#6acc64" if t["abbreviation"] == abbr_sel else "#b5e2b0"
+        "#ec407a" if t["abbreviation"] == abbr_sel else "#f48fb1"
         for t in sorted_by_paint
     ]
 
