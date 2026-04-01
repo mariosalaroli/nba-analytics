@@ -2464,8 +2464,6 @@ def page_players():
 
         if "player_filters" not in st.session_state:
             st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
-        if "player_filters_applied" not in st.session_state:
-            st.session_state["player_filters_applied"] = None
 
         def _add_filter():
             st.session_state["player_filters"].append(
@@ -2475,15 +2473,8 @@ def page_players():
         def _remove_filter(idx):
             st.session_state["player_filters"].pop(idx)
 
-        def _apply_filters():
-            st.session_state["player_filters_applied"] = {
-                "filters": [dict(f) for f in st.session_state["player_filters"]],
-                "mode": st.session_state.get("filter_mode", "E (todos)"),
-            }
-
         def _clear_filters():
             st.session_state["player_filters"] = [{"col": "GP", "op": "≥", "val": 20}]
-            st.session_state["player_filters_applied"] = None
 
         with st.form("player_filter_form"):
             filter_mode = st.radio(
@@ -2531,7 +2522,7 @@ def page_players():
 
             btn1, btn2, _, btn3, btn4 = st.columns([2, 1.5, 5, 2, 1.5])
             with btn1:
-                st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
+                submitted = st.form_submit_button("🔍 Filtrar")
             with btn2:
                 st.form_submit_button("🗑️ Limpar", on_click=_clear_filters)
             with btn3:
@@ -2544,26 +2535,28 @@ def page_players():
                         args=(len(st.session_state["player_filters"]) - 1,),
                     )
 
-        # Aplicar filtros salvos
+        # Aplicar filtros lendo direto das keys dos widgets (valores atuais)
         df_filtered = df_all.copy()
-        applied = st.session_state.get("player_filters_applied")
-        if applied:
-            masks = []
-            for f in applied["filters"]:
-                col, op, val = f["col"], f["op"], f["val"]
-                if col in df_filtered.columns:
-                    method = getattr(df_filtered[col], operators[op])
-                    masks.append(method(val))
-            if masks:
-                if applied["mode"] == "E (todos)":
-                    combined = masks[0]
-                    for m in masks[1:]:
-                        combined = combined & m
-                else:
-                    combined = masks[0]
-                    for m in masks[1:]:
-                        combined = combined | m
-                df_filtered = df_filtered[combined]
+        n_filters = len(st.session_state["player_filters"])
+        masks = []
+        mode = st.session_state.get("filter_mode", "E (todos)")
+        for i in range(n_filters):
+            col = st.session_state.get(f"fcol_{i}")
+            op = st.session_state.get(f"fop_{i}")
+            val = st.session_state.get(f"fval_{i}")
+            if col and op and val is not None and col in df_filtered.columns:
+                method = getattr(df_filtered[col], operators[op])
+                masks.append(method(val))
+        if masks:
+            if mode == "E (todos)":
+                combined = masks[0]
+                for m in masks[1:]:
+                    combined = combined & m
+            else:
+                combined = masks[0]
+                for m in masks[1:]:
+                    combined = combined | m
+            df_filtered = df_filtered[combined]
 
         st.caption(f"{len(df_filtered)} jogadores de {len(df_all)}")
         st.dataframe(df_filtered, width="stretch", hide_index=True, height=600)
