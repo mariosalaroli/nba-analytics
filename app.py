@@ -2521,23 +2521,20 @@ def page_players():
                     )
 
             has_remove = len(st.session_state["player_filters"]) > 1
-            if has_remove:
-                btn1, btn2, _, btn3, btn4 = st.columns([1.5, 1, 6, 1.5, 1.5])
-            else:
-                btn1, btn2, _, btn3 = st.columns([1.5, 1, 7, 1.5])
+            btn1, btn2, _, btn3, btn4 = st.columns([1.5, 1, 6, 1.5, 1.5])
             with btn1:
                 submitted = st.form_submit_button("🔍 Filtrar")
             with btn2:
                 st.form_submit_button("🗑️ Limpar", on_click=_clear_filters)
             with btn3:
-                st.form_submit_button("➕ Adicionar", on_click=_add_filter)
-            if has_remove:
-                with btn4:
+                if has_remove:
                     st.form_submit_button(
                         "➖ Remover",
                         on_click=_remove_filter,
                         args=(len(st.session_state["player_filters"]) - 1,),
                     )
+            with btn4:
+                st.form_submit_button("➕ Adicionar", on_click=_add_filter)
 
         # Aplicar filtros lendo direto das keys dos widgets (valores atuais)
         df_filtered = df_all.copy()
