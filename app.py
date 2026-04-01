@@ -2087,6 +2087,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             yanchor="bottom",
             y=1.01,
             x=0,
+            traceorder="normal",
         ),
         xaxis=dict(
             showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
