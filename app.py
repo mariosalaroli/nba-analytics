@@ -2473,7 +2473,9 @@ def page_players():
         ver = st.session_state["_fver"]
 
         def _add_filter():
-            st.session_state["player_filters"].append({"col": EMPTY, "op": "≥", "val": 0.0})
+            st.session_state["player_filters"].append(
+                {"col": EMPTY, "op": "≥", "val": 0.0}
+            )
 
         def _remove_filter(idx):
             st.session_state["player_filters"].pop(idx)
@@ -2554,7 +2556,13 @@ def page_players():
         masks = []
         for f in filters:
             col, op, val = f["col"], f["op"], f["val"]
-            if col and col != EMPTY and op and val is not None and col in df_filtered.columns:
+            if (
+                col
+                and col != EMPTY
+                and op
+                and val is not None
+                and col in df_filtered.columns
+            ):
                 method = getattr(df_filtered[col], operators[op])
                 masks.append(method(val))
         if masks:
@@ -2582,12 +2590,10 @@ def main():
     team, page = render_sidebar(cache)
 
     # Scroll to top on page change
+    _scroll = False
     if st.session_state.get("_current_page") != page:
         st.session_state["_current_page"] = page
-        components.html(
-            "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
-            height=0,
-        )
+        _scroll = True
 
     if page == "Visão geral":
         page_overview(team, cache["teams"])
@@ -2601,6 +2607,13 @@ def main():
         page_comparison(cache["teams"])
     elif page == "Jogadores":
         page_players()
+
+    # Scroll to top (após renderizar a página)
+    if _scroll:
+        components.html(
+            "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
+            height=0,
+        )
 
 
 if __name__ == "__main__":
