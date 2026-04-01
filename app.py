@@ -240,6 +240,7 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
         pages = [
             "Visão geral",
             "Comparativo da Liga",
+            "Perfil ofensivo",
             "Últimos jogos",
             "Confronto direto",
             "Jogadores",
@@ -1618,6 +1619,504 @@ def page_comparison(all_teams: dict):
                     _go_to_player(ps_b[sel_b.selection.rows[0]]["jogador"])
 
 
+# ─── Página Perfil Ofensivo ────────────────────────────────────────────────────
+
+
+def page_offensive_profile(team: dict, all_teams: dict):
+    abbr_sel = team["abbreviation"]
+    color = get_team_color(abbr_sel)
+    r_c, g_c, b_c = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+
+    # Preparar dados de zonas para todos os times
+    for t in all_teams.values():
+        t["pts_3pt"] = round((t.get("fg3m") or 0) * 3, 1)
+        pts = t.get("pts") or 1
+        t["pct_paint"] = round((t.get("pts_paint") or 0) / pts * 100, 1)
+        t["pct_mid"] = round((t.get("pts_mid_range") or 0) / pts * 100, 1)
+        t["pct_3pt"] = round(t["pts_3pt"] / pts * 100, 1)
+        t["pct_fb"] = round((t.get("pts_fb") or 0) / pts * 100, 1)
+        t["pct_2nd"] = round((t.get("pts_2nd_chance") or 0) / pts * 100, 1)
+
+    # Médias da liga
+    n = len(all_teams)
+    avg_paint = round(sum(t.get("pts_paint") or 0 for t in all_teams.values()) / n, 1)
+    avg_mid = round(sum(t.get("pts_mid_range") or 0 for t in all_teams.values()) / n, 1)
+    avg_3pt = round(sum(t["pts_3pt"] for t in all_teams.values()) / n, 1)
+    avg_fb = round(sum(t.get("pts_fb") or 0 for t in all_teams.values()) / n, 1)
+    avg_2nd = round(
+        sum(t.get("pts_2nd_chance") or 0 for t in all_teams.values()) / n, 1
+    )
+
+    # ── Métricas do time ──
+    st.markdown(
+        '<div class="section-header">Perfil ofensivo — de onde vêm os pontos</div>',
+        unsafe_allow_html=True,
+    )
+
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric(
+        "Paint",
+        f"{team.get('pts_paint', 0)}",
+        delta=f"{round((team.get('pts_paint') or 0) - avg_paint, 1):+} vs liga",
+    )
+    m2.metric(
+        "Mid-Range",
+        f"{team.get('pts_mid_range', 0)}",
+        delta=f"{round((team.get('pts_mid_range') or 0) - avg_mid, 1):+} vs liga",
+    )
+    m3.metric(
+        "3 Pontos",
+        f"{team['pts_3pt']}",
+        delta=f"{round(team['pts_3pt'] - avg_3pt, 1):+} vs liga",
+    )
+    m4.metric(
+        "Fast Break",
+        f"{team.get('pts_fb', 0)}",
+        delta=f"{round((team.get('pts_fb') or 0) - avg_fb, 1):+} vs liga",
+    )
+    m5.metric(
+        "2ª Chance",
+        f"{team.get('pts_2nd_chance', 0)}",
+        delta=f"{round((team.get('pts_2nd_chance') or 0) - avg_2nd, 1):+} vs liga",
+    )
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── Gráfico 1: Radar de perfil ofensivo (time vs liga) ──
+    # ── Gráfico 2: Time vs Liga (grouped bar) ──
+    col_radar, col_bar = st.columns(2)
+
+    with col_radar:
+        st.markdown(
+            '<div class="section-header">Radar — Perfil de pontuação</div>',
+            unsafe_allow_html=True,
+        )
+        radar_labels = ["Paint", "Mid-Range", "3 Pontos", "Fast Break", "2ª Chance"]
+        radar_keys = [
+            "pts_paint",
+            "pts_mid_range",
+            "pts_3pt",
+            "pts_fb",
+            "pts_2nd_chance",
+        ]
+
+        # Normalizar 0-10
+        team_radar = []
+        for key in radar_keys:
+            vals = [t.get(key) or 0 for t in all_teams.values()]
+            mn, mx = min(vals), max(vals)
+            v = team.get(key) or 0
+            team_radar.append(round((v - mn) / (mx - mn + 1e-9) * 10, 1))
+
+        fill_rgba = f"rgba({r_c},{g_c},{b_c},0.2)"
+        fig_radar = go.Figure()
+        fig_radar.add_trace(
+            go.Scatterpolar(
+                r=team_radar + [team_radar[0]],
+                theta=radar_labels + [radar_labels[0]],
+                fill="toself",
+                fillcolor=fill_rgba,
+                line=dict(color=color, width=2),
+                name=team["nickname"],
+            )
+        )
+        # Média da liga (normalizada = ~5 para cada eixo)
+        avg_radar = []
+        for key in radar_keys:
+            vals = [t.get(key) or 0 for t in all_teams.values()]
+            mn, mx = min(vals), max(vals)
+            avg_v = sum(vals) / len(vals)
+            avg_radar.append(round((avg_v - mn) / (mx - mn + 1e-9) * 10, 1))
+        fig_radar.add_trace(
+            go.Scatterpolar(
+                r=avg_radar + [avg_radar[0]],
+                theta=radar_labels + [radar_labels[0]],
+                fill="toself",
+                fillcolor="rgba(150,150,150,0.08)",
+                line=dict(color="#999", width=1, dash="dot"),
+                name="Média da Liga",
+            )
+        )
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True, range=[0, 10], showticklabels=False, gridcolor="#eee"
+                ),
+                angularaxis=dict(
+                    tickfont=dict(size=12, family="DM Sans", weight="bold")
+                ),
+                bgcolor="white",
+                gridshape="circular",
+            ),
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+            height=380,
+            margin=dict(l=50, r=50, t=30, b=30),
+            paper_bgcolor="white",
+        )
+        st.plotly_chart(fig_radar, width="stretch", config={"displayModeBar": False})
+
+    with col_bar:
+        st.markdown(
+            '<div class="section-header">Time vs Média da Liga (pts/jogo)</div>',
+            unsafe_allow_html=True,
+        )
+        cat_labels = ["Paint", "Mid-Range", "3 Pontos", "Fast Break", "2ª Chance"]
+        team_vals = [
+            team.get("pts_paint") or 0,
+            team.get("pts_mid_range") or 0,
+            team["pts_3pt"],
+            team.get("pts_fb") or 0,
+            team.get("pts_2nd_chance") or 0,
+        ]
+        liga_vals = [avg_paint, avg_mid, avg_3pt, avg_fb, avg_2nd]
+
+        fig_vs = go.Figure()
+        fig_vs.add_trace(
+            go.Bar(
+                name=team["nickname"],
+                x=cat_labels,
+                y=team_vals,
+                marker_color=color,
+                text=[f"{v:.1f}" for v in team_vals],
+                textposition="inside",
+                textfont=dict(size=11, family="DM Mono", color="white"),
+            )
+        )
+        fig_vs.add_trace(
+            go.Bar(
+                name="Média Liga",
+                x=cat_labels,
+                y=liga_vals,
+                marker_color="#bdbdbd",
+                text=[f"{v:.1f}" for v in liga_vals],
+                textposition="inside",
+                textfont=dict(size=11, family="DM Mono", color="white"),
+            )
+        )
+        fig_vs.update_layout(
+            barmode="group",
+            height=380,
+            margin=dict(l=0, r=0, t=10, b=10),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+            yaxis=dict(showgrid=True, gridcolor="#f0f0f0", tickfont=dict(size=10)),
+            xaxis=dict(tickfont=dict(size=12, family="DM Mono")),
+        )
+        st.plotly_chart(fig_vs, width="stretch", config={"displayModeBar": False})
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── Gráfico 3: Stacked bar — DNA ofensivo por zona (todos os times) ──
+    st.markdown(
+        '<div class="section-header">DNA ofensivo — Distribuição de pontos por zona (pts/jogo)</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Ordenar por pts total
+    sorted_teams = sorted(all_teams.values(), key=lambda t: t.get("pts") or 0)
+    team_names = [t["abbreviation"] for t in sorted_teams]
+    paint_vals = [t.get("pts_paint") or 0 for t in sorted_teams]
+    mid_vals = [t.get("pts_mid_range") or 0 for t in sorted_teams]
+    three_vals = [t["pts_3pt"] for t in sorted_teams]
+
+    bar_colors_paint = [
+        "#E65100" if t["abbreviation"] == abbr_sel else "#FF9800" for t in sorted_teams
+    ]
+    bar_colors_mid = [
+        "#1565C0" if t["abbreviation"] == abbr_sel else "#64B5F6" for t in sorted_teams
+    ]
+    bar_colors_3pt = [
+        "#2E7D32" if t["abbreviation"] == abbr_sel else "#81C784" for t in sorted_teams
+    ]
+
+    fig_dna = go.Figure()
+    fig_dna.add_trace(
+        go.Bar(
+            name="Paint",
+            y=team_names,
+            x=paint_vals,
+            orientation="h",
+            marker_color=bar_colors_paint,
+            textfont=dict(size=9, family="DM Mono"),
+        )
+    )
+    fig_dna.add_trace(
+        go.Bar(
+            name="Mid-Range",
+            y=team_names,
+            x=mid_vals,
+            orientation="h",
+            marker_color=bar_colors_mid,
+            textfont=dict(size=9, family="DM Mono"),
+        )
+    )
+    fig_dna.add_trace(
+        go.Bar(
+            name="3 Pontos",
+            y=team_names,
+            x=three_vals,
+            orientation="h",
+            marker_color=bar_colors_3pt,
+            textfont=dict(size=9, family="DM Mono"),
+        )
+    )
+    fig_dna.update_layout(
+        barmode="stack",
+        height=max(600, len(team_names) * 24),
+        margin=dict(l=60, r=20, t=10, b=10),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+        xaxis=dict(showgrid=True, gridcolor="#f0f0f0", title="Pontos / jogo"),
+        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), automargin=True),
+    )
+    st.plotly_chart(fig_dna, width="stretch", config={"displayModeBar": False})
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── Gráfico 4: Distribuição proporcional (% stacked) ──
+    st.markdown(
+        '<div class="section-header">Distribuição proporcional — % dos pontos por zona</div>',
+        unsafe_allow_html=True,
+    )
+    pct_paint = [t["pct_paint"] for t in sorted_teams]
+    pct_mid = [t["pct_mid"] for t in sorted_teams]
+    pct_3pt = [t["pct_3pt"] for t in sorted_teams]
+
+    fig_pct = go.Figure()
+    fig_pct.add_trace(
+        go.Bar(
+            name="Paint %",
+            y=team_names,
+            x=pct_paint,
+            orientation="h",
+            marker_color=bar_colors_paint,
+            text=[f"{v:.0f}%" for v in pct_paint],
+            textposition="inside",
+            textfont=dict(size=9, family="DM Mono", color="white"),
+        )
+    )
+    fig_pct.add_trace(
+        go.Bar(
+            name="Mid-Range %",
+            y=team_names,
+            x=pct_mid,
+            orientation="h",
+            marker_color=bar_colors_mid,
+            text=[f"{v:.0f}%" for v in pct_mid],
+            textposition="inside",
+            textfont=dict(size=9, family="DM Mono", color="white"),
+        )
+    )
+    fig_pct.add_trace(
+        go.Bar(
+            name="3PT %",
+            y=team_names,
+            x=pct_3pt,
+            orientation="h",
+            marker_color=bar_colors_3pt,
+            text=[f"{v:.0f}%" for v in pct_3pt],
+            textposition="inside",
+            textfont=dict(size=9, family="DM Mono", color="white"),
+        )
+    )
+    fig_pct.update_layout(
+        barmode="stack",
+        height=max(600, len(team_names) * 24),
+        margin=dict(l=60, r=20, t=10, b=10),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, x=0),
+        xaxis=dict(
+            showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
+        ),
+        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), automargin=True),
+    )
+    st.plotly_chart(fig_pct, width="stretch", config={"displayModeBar": False})
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── Gráfico 5: Scatter — Paint vs 3PT ──
+    # ── Gráfico 6: Scatter — Fast Break vs 2ª Chance ──
+    sc_left, sc_right = st.columns(2)
+
+    with sc_left:
+        st.markdown(
+            '<div class="section-header">Paint vs 3 Pontos (pts/jogo)</div>',
+            unsafe_allow_html=True,
+        )
+        scatter_df = pd.DataFrame(
+            [
+                {
+                    "Time": t["abbreviation"],
+                    "Paint": t.get("pts_paint") or 0,
+                    "3PT": t["pts_3pt"],
+                    "color": get_team_color(t["abbreviation"]),
+                    "selected": t["abbreviation"] == abbr_sel,
+                }
+                for t in all_teams.values()
+            ]
+        )
+        fig_sc1 = go.Figure()
+        # Outros times
+        other = scatter_df[~scatter_df["selected"]]
+        fig_sc1.add_trace(
+            go.Scatter(
+                x=other["Paint"],
+                y=other["3PT"],
+                mode="markers+text",
+                marker=dict(size=10, color="#bdbdbd", line=dict(width=1, color="#999")),
+                text=other["Time"],
+                textposition="top center",
+                textfont=dict(size=9, family="DM Mono", color="#888"),
+                hovertemplate="<b>%{text}</b><br>Paint: %{x:.1f}<br>3PT: %{y:.1f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+        # Time selecionado
+        sel = scatter_df[scatter_df["selected"]]
+        fig_sc1.add_trace(
+            go.Scatter(
+                x=sel["Paint"],
+                y=sel["3PT"],
+                mode="markers+text",
+                marker=dict(size=14, color=color, line=dict(width=2, color="#333")),
+                text=sel["Time"],
+                textposition="top center",
+                textfont=dict(size=11, family="DM Mono", color=color, weight="bold"),
+                hovertemplate="<b>%{text}</b><br>Paint: %{x:.1f}<br>3PT: %{y:.1f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+        # Linhas de média
+        fig_sc1.add_hline(
+            y=avg_3pt,
+            line_dash="dash",
+            line_color="#ccc",
+            opacity=0.6,
+            annotation_text=f"μ 3PT: {avg_3pt}",
+            annotation_position="right",
+            annotation_font_size=9,
+            annotation_font_color="#999",
+        )
+        fig_sc1.add_vline(
+            x=avg_paint,
+            line_dash="dash",
+            line_color="#ccc",
+            opacity=0.6,
+            annotation_text=f"μ Paint: {avg_paint}",
+            annotation_position="top",
+            annotation_font_size=9,
+            annotation_font_color="#999",
+        )
+        fig_sc1.update_layout(
+            height=400,
+            margin=dict(l=10, r=10, t=10, b=10),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                title="Pts no Paint / jogo",
+                showgrid=True,
+                gridcolor="#f5f5f5",
+                tickfont=dict(size=10),
+            ),
+            yaxis=dict(
+                title="Pts de 3 / jogo",
+                showgrid=True,
+                gridcolor="#f5f5f5",
+                tickfont=dict(size=10),
+            ),
+        )
+        st.plotly_chart(fig_sc1, width="stretch", config={"displayModeBar": False})
+
+    with sc_right:
+        st.markdown(
+            '<div class="section-header">Fast Break vs 2ª Chance (pts/jogo)</div>',
+            unsafe_allow_html=True,
+        )
+        scatter_df2 = pd.DataFrame(
+            [
+                {
+                    "Time": t["abbreviation"],
+                    "FB": t.get("pts_fb") or 0,
+                    "2nd": t.get("pts_2nd_chance") or 0,
+                    "selected": t["abbreviation"] == abbr_sel,
+                }
+                for t in all_teams.values()
+            ]
+        )
+        fig_sc2 = go.Figure()
+        other2 = scatter_df2[~scatter_df2["selected"]]
+        fig_sc2.add_trace(
+            go.Scatter(
+                x=other2["FB"],
+                y=other2["2nd"],
+                mode="markers+text",
+                marker=dict(size=10, color="#bdbdbd", line=dict(width=1, color="#999")),
+                text=other2["Time"],
+                textposition="top center",
+                textfont=dict(size=9, family="DM Mono", color="#888"),
+                hovertemplate="<b>%{text}</b><br>Fast Break: %{x:.1f}<br>2ª Chance: %{y:.1f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+        sel2 = scatter_df2[scatter_df2["selected"]]
+        fig_sc2.add_trace(
+            go.Scatter(
+                x=sel2["FB"],
+                y=sel2["2nd"],
+                mode="markers+text",
+                marker=dict(size=14, color=color, line=dict(width=2, color="#333")),
+                text=sel2["Time"],
+                textposition="top center",
+                textfont=dict(size=11, family="DM Mono", color=color, weight="bold"),
+                hovertemplate="<b>%{text}</b><br>Fast Break: %{x:.1f}<br>2ª Chance: %{y:.1f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+        fig_sc2.add_hline(
+            y=avg_2nd,
+            line_dash="dash",
+            line_color="#ccc",
+            opacity=0.6,
+            annotation_text=f"μ 2ª Ch: {avg_2nd}",
+            annotation_position="right",
+            annotation_font_size=9,
+            annotation_font_color="#999",
+        )
+        fig_sc2.add_vline(
+            x=avg_fb,
+            line_dash="dash",
+            line_color="#ccc",
+            opacity=0.6,
+            annotation_text=f"μ FB: {avg_fb}",
+            annotation_position="top",
+            annotation_font_size=9,
+            annotation_font_color="#999",
+        )
+        fig_sc2.update_layout(
+            height=400,
+            margin=dict(l=10, r=10, t=10, b=10),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                title="Pts Fast Break / jogo",
+                showgrid=True,
+                gridcolor="#f5f5f5",
+                tickfont=dict(size=10),
+            ),
+            yaxis=dict(
+                title="Pts 2ª Chance / jogo",
+                showgrid=True,
+                gridcolor="#f5f5f5",
+                tickfont=dict(size=10),
+            ),
+        )
+        st.plotly_chart(fig_sc2, width="stretch", config={"displayModeBar": False})
+
+
 # ─── Página Jogadores ─────────────────────────────────────────────────────────
 
 
@@ -1983,6 +2482,8 @@ def main():
         page_overview(team, cache["teams"])
     elif page == "Comparativo da Liga":
         page_stats(team, cache["teams"])
+    elif page == "Perfil ofensivo":
+        page_offensive_profile(team, cache["teams"])
     elif page == "Últimos jogos":
         page_games(team)
     elif page == "Confronto direto":

@@ -123,7 +123,9 @@ def init_db(conn: sqlite3.Connection):
             opp_reb      REAL,
             pts_2nd_chance REAL,
             pts_fb       REAL,
-            pts_paint    REAL
+            pts_paint    REAL,
+            pts_mid_range    REAL,
+            pct_pts_mid_range REAL
         );
         CREATE TABLE IF NOT EXISTS games (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -196,6 +198,27 @@ def init_db(conn: sqlite3.Connection):
         );
     """
     )
+    conn.commit()
+
+    # Migrar colunas novas (SQLite não altera CREATE TABLE IF NOT EXISTS)
+    _migrate_columns(
+        conn,
+        "teams",
+        {
+            "pts_mid_range": "REAL",
+            "pct_pts_mid_range": "REAL",
+        },
+    )
+
+
+def _migrate_columns(conn: sqlite3.Connection, table: str, columns: dict):
+    """Adiciona colunas que ainda não existem na tabela."""
+    existing = {
+        row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+    }
+    for col, col_type in columns.items():
+        if col not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
     conn.commit()
 
 
@@ -360,6 +383,23 @@ def fetch_misc_stats() -> dict:
     return result
 
 
+def fetch_scoring_stats() -> dict:
+    """Busca stats de scoring (mid-range, etc.) para todos os times."""
+    d = _api_call(
+        LeagueDashTeamStats,
+        season=SEASON,
+        per_mode_detailed="PerGame",
+        measure_type_detailed_defense="Scoring",
+    )
+    df = d.get_data_frames()[0]
+    result = {}
+    for _, row in df.iterrows():
+        result[int(row["TEAM_ID"])] = {
+            "pct_pts_mid_range": round(float(row["PCT_PTS_2PT_MR"]) * 100, 1),
+        }
+    return result
+
+
 def save_to_db(conn: sqlite3.Connection):
     all_teams = get_all_teams()
     total = len(all_teams)
@@ -382,6 +422,10 @@ def save_to_db(conn: sqlite3.Connection):
     misc_map = fetch_misc_stats()
     print("ok")
 
+    print("  Buscando stats de scoring (mid-range)...", end=" ", flush=True)
+    scoring_map = fetch_scoring_stats()
+    print("ok")
+
     for i, team in enumerate(all_teams, 1):
         tid = team["id"]
         abbr = team["abbreviation"]
@@ -395,6 +439,12 @@ def save_to_db(conn: sqlite3.Connection):
             stats.update(opp)
             misc = misc_map.get(tid, {})
             stats.update(misc)
+            scoring = scoring_map.get(tid, {})
+            stats.update(scoring)
+            # Calcular pts_mid_range a partir da % e pts/jogo
+            pct_mr = stats.get("pct_pts_mid_range") or 0
+            pts_total = stats.get("pts") or 0
+            stats["pts_mid_range"] = round(pts_total * pct_mr / 100, 1)
             games = fetch_last_games(tid, n=15)
             st = standings_map.get(tid, {})
 
@@ -414,12 +464,13 @@ def save_to_db(conn: sqlite3.Connection):
                     ast_ratio, oreb_pct, dreb_pct, reb_pct, tov_pct,
                     opp_fgm, opp_fga, opp_fg_pct, opp_fg3m, opp_fg3a,
                     opp_fg3_pct, opp_oreb, opp_dreb, opp_reb,
-                    pts_2nd_chance, pts_fb, pts_paint)
+                    pts_2nd_chance, pts_fb, pts_paint,
+                    pts_mid_range, pct_pts_mid_range)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
                         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
                         ?,?,?,?,?,?,?,?,?,?,
                         ?,?,?,?,?,?,?,?,?,
-                        ?,?,?)
+                        ?,?,?,?,?)
                 ON CONFLICT(abbreviation) DO UPDATE SET
                     id=excluded.id, name=excluded.name, city=excluded.city,
                     nickname=excluded.nickname, conference=excluded.conference,
@@ -446,7 +497,9 @@ def save_to_db(conn: sqlite3.Connection):
                     opp_oreb=excluded.opp_oreb, opp_dreb=excluded.opp_dreb,
                     opp_reb=excluded.opp_reb,
                     pts_2nd_chance=excluded.pts_2nd_chance,
-                    pts_fb=excluded.pts_fb, pts_paint=excluded.pts_paint
+                    pts_fb=excluded.pts_fb, pts_paint=excluded.pts_paint,
+                    pts_mid_range=excluded.pts_mid_range,
+                    pct_pts_mid_range=excluded.pct_pts_mid_range
             """,
                 (
                     abbr,
@@ -506,6 +559,8 @@ def save_to_db(conn: sqlite3.Connection):
                     stats.get("pts_2nd_chance"),
                     stats.get("pts_fb"),
                     stats.get("pts_paint"),
+                    stats.get("pts_mid_range"),
+                    stats.get("pct_pts_mid_range"),
                 ),
             )
 
@@ -1191,6 +1246,9 @@ def force_update():
     yield "Buscando stats diversas..."
     misc_map = fetch_misc_stats()
 
+    yield "Buscando stats de scoring (mid-range)..."
+    scoring_map = fetch_scoring_stats()
+
     for i, team in enumerate(all_teams, 1):
         tid = team["id"]
         abbr = team["abbreviation"]
@@ -1204,6 +1262,12 @@ def force_update():
             stats.update(opp)
             misc = misc_map.get(tid, {})
             stats.update(misc)
+            scoring = scoring_map.get(tid, {})
+            stats.update(scoring)
+            # Calcular pts_mid_range a partir da % e pts/jogo
+            pct_mr = stats.get("pct_pts_mid_range") or 0
+            pts_total = stats.get("pts") or 0
+            stats["pts_mid_range"] = round(pts_total * pct_mr / 100, 1)
             games = fetch_last_games(tid, n=15)
             st = standings_map.get(tid, {})
 
@@ -1223,12 +1287,13 @@ def force_update():
                     ast_ratio, oreb_pct, dreb_pct, reb_pct, tov_pct,
                     opp_fgm, opp_fga, opp_fg_pct, opp_fg3m, opp_fg3a,
                     opp_fg3_pct, opp_oreb, opp_dreb, opp_reb,
-                    pts_2nd_chance, pts_fb, pts_paint)
+                    pts_2nd_chance, pts_fb, pts_paint,
+                    pts_mid_range, pct_pts_mid_range)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
                         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
                         ?,?,?,?,?,?,?,?,?,?,
                         ?,?,?,?,?,?,?,?,?,
-                        ?,?,?)
+                        ?,?,?,?,?)
                 ON CONFLICT(abbreviation) DO UPDATE SET
                     id=excluded.id, name=excluded.name, city=excluded.city,
                     nickname=excluded.nickname, conference=excluded.conference,
@@ -1255,7 +1320,9 @@ def force_update():
                     opp_oreb=excluded.opp_oreb, opp_dreb=excluded.opp_dreb,
                     opp_reb=excluded.opp_reb,
                     pts_2nd_chance=excluded.pts_2nd_chance,
-                    pts_fb=excluded.pts_fb, pts_paint=excluded.pts_paint
+                    pts_fb=excluded.pts_fb, pts_paint=excluded.pts_paint,
+                    pts_mid_range=excluded.pts_mid_range,
+                    pct_pts_mid_range=excluded.pct_pts_mid_range
             """,
                 (
                     abbr,
@@ -1315,6 +1382,8 @@ def force_update():
                     stats.get("pts_2nd_chance"),
                     stats.get("pts_fb"),
                     stats.get("pts_paint"),
+                    stats.get("pts_mid_range"),
+                    stats.get("pct_pts_mid_range"),
                 ),
             )
 
