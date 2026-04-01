@@ -2611,7 +2611,15 @@ def main():
     # Scroll to top (após renderizar a página)
     if _scroll:
         components.html(
-            "<script>window.parent.document.querySelector('section.main').scrollTo(0, 0);</script>",
+            """<script>
+            setTimeout(function() {
+                var main = window.parent.document.querySelector('section.main');
+                if (main) main.scrollTo({top: 0, behavior: 'instant'});
+                var block = window.parent.document.querySelector('.block-container');
+                if (block) block.scrollTo({top: 0, behavior: 'instant'});
+                window.parent.document.documentElement.scrollTo({top: 0, behavior: 'instant'});
+            }, 50);
+            </script>""",
             height=0,
         )
 
