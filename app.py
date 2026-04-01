@@ -2529,7 +2529,7 @@ def page_players():
                         label_visibility="collapsed",
                     )
 
-            btn1, btn2, _, btn3, btn4 = st.columns([2, 2, 3, 2, 2])
+            btn1, btn2, _, btn3, btn4 = st.columns([2, 1.5, 5, 2, 1.5])
             with btn1:
                 st.form_submit_button("🔍 Filtrar", on_click=_apply_filters)
             with btn2:
