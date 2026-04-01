@@ -1808,32 +1808,41 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # Ordenar todos os 30 times por % Paint (menor embaixo, maior em cima)
-    sorted_by_paint = sorted(all_teams.values(), key=lambda t: t.get("pct_paint") or 0)
-
-    team_names = [t["abbreviation"] for t in sorted_by_paint]
-
-    bar_colors_paint = [
-        "#66c49a" if t["abbreviation"] == abbr_sel else "#b3e2cd"
-        for t in sorted_by_paint
-    ]
-    bar_colors_mid = [
-        "#e8a060" if t["abbreviation"] == abbr_sel else "#fdcdac"
-        for t in sorted_by_paint
-    ]
-    bar_colors_3pt = [
-        "#8faad4" if t["abbreviation"] == abbr_sel else "#cbd5e8"
-        for t in sorted_by_paint
-    ]
-
     # ── Gráfico: DNA ofensivo — Distribuição proporcional (% stacked) ──
     st.markdown(
-        '<div class="section-header">DNA ofensivo — % dos pontos por zona (garrafão → perímetro)</div>',
+        '<div class="section-header">DNA ofensivo — % dos pontos por zona</div>',
         unsafe_allow_html=True,
     )
-    pct_paint = [t["pct_paint"] for t in sorted_by_paint]
-    pct_mid = [t["pct_mid"] for t in sorted_by_paint]
-    pct_3pt = [t["pct_3pt"] for t in sorted_by_paint]
+
+    sort_options = {
+        "Paint %": "pct_paint",
+        "Mid-Range %": "pct_mid",
+        "3PT %": "pct_3pt",
+    }
+    sort_label = st.radio(
+        "Ordenar por",
+        options=list(sort_options.keys()),
+        index=0,
+        horizontal=True,
+        key="dna_sort",
+    )
+    sort_key = sort_options[sort_label]
+
+    sorted_teams = sorted(all_teams.values(), key=lambda t: t.get(sort_key) or 0)
+    team_names = [t["abbreviation"] for t in sorted_teams]
+
+    bar_colors_paint = [
+        "#66c49a" if t["abbreviation"] == abbr_sel else "#b3e2cd" for t in sorted_teams
+    ]
+    bar_colors_mid = [
+        "#e8a060" if t["abbreviation"] == abbr_sel else "#fdcdac" for t in sorted_teams
+    ]
+    bar_colors_3pt = [
+        "#8faad4" if t["abbreviation"] == abbr_sel else "#cbd5e8" for t in sorted_teams
+    ]
+    pct_paint = [t["pct_paint"] for t in sorted_teams]
+    pct_mid = [t["pct_mid"] for t in sorted_teams]
+    pct_3pt = [t["pct_3pt"] for t in sorted_teams]
 
     fig_pct = go.Figure()
     fig_pct.add_trace(
