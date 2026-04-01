@@ -1814,111 +1814,6 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Gráfico: DNA ofensivo — Distribuição proporcional (% stacked) ──
-    st.markdown(
-        '<div class="section-header">DNA ofensivo — % dos pontos por zona</div>',
-        unsafe_allow_html=True,
-    )
-
-    sort_options = {
-        "Garrafão %": "pct_paint",
-        "Meia-dist. %": "pct_mid",
-        "3 Pontos %": "pct_3pt",
-    }
-    sort_label = st.radio(
-        "Ordenar por",
-        options=list(sort_options.keys()),
-        index=0,
-        horizontal=True,
-        key="dna_sort",
-    )
-    sort_key = sort_options[sort_label]
-
-    sorted_teams = sorted(all_teams.values(), key=lambda t: t.get(sort_key) or 0)
-    team_names = [t["abbreviation"] for t in sorted_teams]
-
-    bar_colors_paint = [
-        "#66c49a" if t["abbreviation"] == abbr_sel else "#b3e2cd" for t in sorted_teams
-    ]
-    bar_colors_mid = [
-        "#e8a060" if t["abbreviation"] == abbr_sel else "#fdcdac" for t in sorted_teams
-    ]
-    bar_colors_3pt = [
-        "#8faad4" if t["abbreviation"] == abbr_sel else "#cbd5e8" for t in sorted_teams
-    ]
-    pct_paint = [t["pct_paint"] for t in sorted_teams]
-    pct_mid = [t["pct_mid"] for t in sorted_teams]
-    pct_3pt = [t["pct_3pt"] for t in sorted_teams]
-
-    # Traces: ordem dinâmica para barras (sort selecionado fica à esquerda),
-    # legendrank fixo para manter legenda sempre Paint | Mid | 3PT
-    all_traces = {
-        "pct_paint": go.Bar(
-            name="Garrafão %",
-            y=team_names,
-            x=pct_paint,
-            orientation="h",
-            marker_color=bar_colors_paint,
-            text=[f"{v:.0f}%" for v in pct_paint],
-            textposition="inside",
-            textangle=0,
-            textfont=dict(size=9, family="DM Mono", color="white"),
-            legendrank=1,
-        ),
-        "pct_mid": go.Bar(
-            name="Meia-dist. %",
-            y=team_names,
-            x=pct_mid,
-            orientation="h",
-            marker_color=bar_colors_mid,
-            text=[f"{v:.0f}%" for v in pct_mid],
-            textposition="inside",
-            textangle=0,
-            textfont=dict(size=9, family="DM Mono", color="white"),
-            legendrank=2,
-        ),
-        "pct_3pt": go.Bar(
-            name="3 Pontos %",
-            y=team_names,
-            x=pct_3pt,
-            orientation="h",
-            marker_color=bar_colors_3pt,
-            text=[f"{v:.0f}%" for v in pct_3pt],
-            textposition="inside",
-            textangle=0,
-            textfont=dict(size=9, family="DM Mono", color="white"),
-            legendrank=3,
-        ),
-    }
-    trace_order = [sort_key] + [
-        k for k in ["pct_paint", "pct_mid", "pct_3pt"] if k != sort_key
-    ]
-    fig_pct = go.Figure()
-    for key in trace_order:
-        fig_pct.add_trace(all_traces[key])
-    fig_pct.update_layout(
-        barmode="stack",
-        height=max(600, len(team_names) * 24),
-        margin=dict(l=60, r=20, t=10, b=10),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.01,
-            x=0,
-        ),
-        xaxis=dict(
-            showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
-        ),
-        yaxis=dict(
-            tickfont=dict(size=11, family="DM Mono"), automargin=True, tickangle=0
-        ),
-    )
-    st.plotly_chart(fig_pct, width="stretch", config={"displayModeBar": False})
-
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-
     # ── Gráfico 5: Scatter — Garrafão vs 3 Pontos ──
     # ── Gráfico 6: Scatter — Em transição vs 2ª Chance ──
     sc_left, sc_right = st.columns(2)
@@ -2096,6 +1991,111 @@ def page_offensive_profile(team: dict, all_teams: dict):
             ),
         )
         st.plotly_chart(fig_sc2, width="stretch", config={"displayModeBar": False})
+
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+    # ── Gráfico: DNA ofensivo — Distribuição proporcional (% stacked) ──
+    st.markdown(
+        '<div class="section-header">DNA ofensivo — % dos pontos por zona</div>',
+        unsafe_allow_html=True,
+    )
+
+    sort_options = {
+        "Garrafão %": "pct_paint",
+        "Meia-dist. %": "pct_mid",
+        "3 Pontos %": "pct_3pt",
+    }
+    sort_label = st.radio(
+        "Ordenar por",
+        options=list(sort_options.keys()),
+        index=0,
+        horizontal=True,
+        key="dna_sort",
+    )
+    sort_key = sort_options[sort_label]
+
+    sorted_teams = sorted(all_teams.values(), key=lambda t: t.get(sort_key) or 0)
+    team_names = [t["abbreviation"] for t in sorted_teams]
+
+    bar_colors_paint = [
+        "#66c49a" if t["abbreviation"] == abbr_sel else "#b3e2cd" for t in sorted_teams
+    ]
+    bar_colors_mid = [
+        "#e8a060" if t["abbreviation"] == abbr_sel else "#fdcdac" for t in sorted_teams
+    ]
+    bar_colors_3pt = [
+        "#8faad4" if t["abbreviation"] == abbr_sel else "#cbd5e8" for t in sorted_teams
+    ]
+    pct_paint = [t["pct_paint"] for t in sorted_teams]
+    pct_mid = [t["pct_mid"] for t in sorted_teams]
+    pct_3pt = [t["pct_3pt"] for t in sorted_teams]
+
+    # Traces: ordem dinâmica para barras (sort selecionado fica à esquerda),
+    # legendrank fixo para manter legenda sempre Paint | Mid | 3PT
+    all_traces = {
+        "pct_paint": go.Bar(
+            name="Garrafão %",
+            y=team_names,
+            x=pct_paint,
+            orientation="h",
+            marker_color=bar_colors_paint,
+            text=[f"{v:.0f}%" for v in pct_paint],
+            textposition="inside",
+            textangle=0,
+            textfont=dict(size=9, family="DM Mono", color="white"),
+            legendrank=1,
+        ),
+        "pct_mid": go.Bar(
+            name="Meia-dist. %",
+            y=team_names,
+            x=pct_mid,
+            orientation="h",
+            marker_color=bar_colors_mid,
+            text=[f"{v:.0f}%" for v in pct_mid],
+            textposition="inside",
+            textangle=0,
+            textfont=dict(size=9, family="DM Mono", color="white"),
+            legendrank=2,
+        ),
+        "pct_3pt": go.Bar(
+            name="3 Pontos %",
+            y=team_names,
+            x=pct_3pt,
+            orientation="h",
+            marker_color=bar_colors_3pt,
+            text=[f"{v:.0f}%" for v in pct_3pt],
+            textposition="inside",
+            textangle=0,
+            textfont=dict(size=9, family="DM Mono", color="white"),
+            legendrank=3,
+        ),
+    }
+    trace_order = [sort_key] + [
+        k for k in ["pct_paint", "pct_mid", "pct_3pt"] if k != sort_key
+    ]
+    fig_pct = go.Figure()
+    for key in trace_order:
+        fig_pct.add_trace(all_traces[key])
+    fig_pct.update_layout(
+        barmode="stack",
+        height=max(600, len(team_names) * 24),
+        margin=dict(l=60, r=20, t=10, b=10),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.01,
+            x=0,
+        ),
+        xaxis=dict(
+            showgrid=True, gridcolor="#f0f0f0", title="% dos pontos", ticksuffix="%"
+        ),
+        yaxis=dict(
+            tickfont=dict(size=11, family="DM Mono"), automargin=True, tickangle=0
+        ),
+    )
+    st.plotly_chart(fig_pct, width="stretch", config={"displayModeBar": False})
 
 
 # ─── Página Jogadores ─────────────────────────────────────────────────────────
