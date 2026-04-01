@@ -1691,7 +1691,13 @@ def page_offensive_profile(team: dict, all_teams: dict):
             '<div class="section-header">Radar — Perfil de pontuação</div>',
             unsafe_allow_html=True,
         )
-        radar_labels = ["Paint", "Mid-Range", "3 Pontos", "Em transição", "2ª Chance"]
+        radar_labels = [
+            "Garrafão",
+            "Meia-dist.",
+            "3 Pontos",
+            "Em transição",
+            "2ª Chance",
+        ]
         radar_keys = [
             "pts_paint",
             "pts_mid_range",
@@ -1761,7 +1767,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             '<div class="section-header">Time vs Média da Liga (pts/jogo)</div>',
             unsafe_allow_html=True,
         )
-        cat_labels = ["Paint", "Mid-Range", "3 Pontos", "Em transição", "2ª Chance"]
+        cat_labels = ["Garrafão", "Meia-dist.", "3 Pontos", "Em transição", "2ª Chance"]
         team_vals = [
             team.get("pts_paint") or 0,
             team.get("pts_mid_range") or 0,
@@ -1815,9 +1821,9 @@ def page_offensive_profile(team: dict, all_teams: dict):
     )
 
     sort_options = {
-        "Paint %": "pct_paint",
-        "Mid-Range %": "pct_mid",
-        "3PT %": "pct_3pt",
+        "Garrafão %": "pct_paint",
+        "Meia-dist. %": "pct_mid",
+        "3 Pontos %": "pct_3pt",
     }
     sort_label = st.radio(
         "Ordenar por",
@@ -1848,7 +1854,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
     # legendrank fixo para manter legenda sempre Paint | Mid | 3PT
     all_traces = {
         "pct_paint": go.Bar(
-            name="Paint %",
+            name="Garrafão %",
             y=team_names,
             x=pct_paint,
             orientation="h",
@@ -1859,7 +1865,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             legendrank=1,
         ),
         "pct_mid": go.Bar(
-            name="Mid-Range %",
+            name="Meia-dist. %",
             y=team_names,
             x=pct_mid,
             orientation="h",
@@ -1870,7 +1876,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             legendrank=2,
         ),
         "pct_3pt": go.Bar(
-            name="3PT %",
+            name="3 Pontos %",
             y=team_names,
             x=pct_3pt,
             orientation="h",
@@ -1910,13 +1916,13 @@ def page_offensive_profile(team: dict, all_teams: dict):
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-    # ── Gráfico 5: Scatter — Paint vs 3PT ──
+    # ── Gráfico 5: Scatter — Garrafão vs 3 Pontos ──
     # ── Gráfico 6: Scatter — Em transição vs 2ª Chance ──
     sc_left, sc_right = st.columns(2)
 
     with sc_left:
         st.markdown(
-            '<div class="section-header">Paint vs 3 Pontos (pts/jogo)</div>',
+            '<div class="section-header">Garrafão vs 3 Pontos (pts/jogo)</div>',
             unsafe_allow_html=True,
         )
         scatter_df = pd.DataFrame(
@@ -1943,7 +1949,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
                 text=other["Time"],
                 textposition="top center",
                 textfont=dict(size=9, family="DM Mono", color="#888"),
-                hovertemplate="<b>%{text}</b><br>Paint: %{x:.1f}<br>3PT: %{y:.1f}<extra></extra>",
+                hovertemplate="<b>%{text}</b><br>Garrafão: %{x:.1f}<br>3 Pontos: %{y:.1f}<extra></extra>",
                 showlegend=False,
             )
         )
@@ -1958,7 +1964,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
                 text=sel["Time"],
                 textposition="top center",
                 textfont=dict(size=11, family="DM Mono", color=color, weight="bold"),
-                hovertemplate="<b>%{text}</b><br>Paint: %{x:.1f}<br>3PT: %{y:.1f}<extra></extra>",
+                hovertemplate="<b>%{text}</b><br>Garrafão: %{x:.1f}<br>3 Pontos: %{y:.1f}<extra></extra>",
                 showlegend=False,
             )
         )
@@ -1968,7 +1974,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             line_dash="dash",
             line_color="#ccc",
             opacity=0.6,
-            annotation_text=f"μ 3PT: {avg_3pt}",
+            annotation_text=f"μ 3P: {avg_3pt}",
             annotation_position="right",
             annotation_font_size=9,
             annotation_font_color="#999",
@@ -1978,7 +1984,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             line_dash="dash",
             line_color="#ccc",
             opacity=0.6,
-            annotation_text=f"μ Paint: {avg_paint}",
+            annotation_text=f"μ Garrafão: {avg_paint}",
             annotation_position="top",
             annotation_font_size=9,
             annotation_font_color="#999",
@@ -1989,7 +1995,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             plot_bgcolor="white",
             paper_bgcolor="white",
             xaxis=dict(
-                title="Pts no Paint / jogo",
+                title="Pts no garrafão / jogo",
                 showgrid=True,
                 gridcolor="#f5f5f5",
                 tickfont=dict(size=10),
@@ -2063,7 +2069,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
             line_dash="dash",
             line_color="#ccc",
             opacity=0.6,
-            annotation_text=f"μ FB: {avg_fb}",
+            annotation_text=f"μ Trans.: {avg_fb}",
             annotation_position="top",
             annotation_font_size=9,
             annotation_font_color="#999",
