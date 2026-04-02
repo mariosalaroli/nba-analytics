@@ -153,8 +153,8 @@ section[data-testid="stSidebar"] button[kind="secondary"]:hover {
 # ─── Carregamento de dados ────────────────────────────────────────────────────
 
 
-@st.cache_data(ttl=3600)
-def load_cache() -> dict:
+def _ensure_db():
+    """Atualiza o banco se necessário, mostrando status apenas nesse caso."""
     conn = get_connection()
     if needs_update(conn):
         conn.close()
@@ -165,6 +165,13 @@ def load_cache() -> dict:
         status.write("Buscando dados dos jogadores...")
         save_players_to_db(conn)
         status.update(label="✅ Dados carregados!", state="complete")
+    else:
+        conn.close()
+
+
+@st.cache_data(ttl=3600)
+def load_cache() -> dict:
+    conn = get_connection()
     season = load_season(conn)
     teams = load_all_teams(conn)
     conn.close()
@@ -2621,6 +2628,7 @@ def page_players():
 
 
 def main():
+    _ensure_db()
     cache = load_cache()
     team, page = render_sidebar(cache)
 
