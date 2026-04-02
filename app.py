@@ -159,11 +159,8 @@ def _ensure_db():
     if needs_update(conn):
         conn.close()
         status = st.status("🏀 Baixando dados da NBA...", expanded=True)
-        status.write("Buscando dados dos times...")
-        conn = get_connection()
-        save_to_db(conn)
-        status.write("Buscando dados dos jogadores...")
-        save_players_to_db(conn)
+        for msg in force_update():
+            status.write(msg)
         status.update(label="✅ Dados carregados!", state="complete")
     else:
         conn.close()
