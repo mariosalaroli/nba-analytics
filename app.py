@@ -391,7 +391,8 @@ def stat_bar_chart(
     top = top.sort_values(label, ascending=not lower_is_better).reset_index(drop=True)
 
     colors = [
-        get_team_color(abbr_sel) if abbr_sel in t else "#9e9e9e" for t in top["Time"]
+        _chart_color(get_team_color(abbr_sel)) if abbr_sel in t else "#9e9e9e"
+        for t in top["Time"]
     ]
 
     fig = go.Figure(
@@ -578,7 +579,7 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
 
 
 def page_overview(team: dict, all_teams: dict):
-    color = get_team_color(team["abbreviation"])
+    color = _chart_color(get_team_color(team["abbreviation"]))
 
     # Header do time
     streak_html = render_streak_chips(team["last_games"][:10])
@@ -940,7 +941,7 @@ def page_stats(team: dict, all_teams: dict):
 def page_games(team: dict):
     games_10 = team["last_games"][:10]
     games_5 = team["last_games"][:5]
-    color = get_team_color(team["abbreviation"])
+    color = _chart_color(get_team_color(team["abbreviation"]))
 
     # Sequência atual
     streak_type = games_10[0]["wl"] if games_10 else ""
@@ -1203,9 +1204,9 @@ def page_games(team: dict):
                 f"<div style='text-align:center;font-size:24px;font-weight:700;"
                 f"font-family:DM Mono,monospace;margin-bottom:12px;'>"
                 f"{t1['city']} {t1['name']} "
-                f"<span style='color:{get_team_color(t1['abbr'])}'>{t1['pts']}</span>"
+                f"<span style='color:{_chart_color(get_team_color(t1['abbr']))}'>{t1['pts']}</span>"
                 f" × "
-                f"<span style='color:{get_team_color(t2['abbr'])}'>{t2['pts']}</span>"
+                f"<span style='color:{_chart_color(get_team_color(t2['abbr']))}'>{t2['pts']}</span>"
                 f" {t2['city']} {t2['name']}"
                 f"</div>",
                 unsafe_allow_html=True,
@@ -1244,8 +1245,8 @@ def page_games(team: dict):
                 "ft",
                 "ft_pct",
             ]
-            c1_color = get_team_color(t1["abbr"])
-            c2_color = get_team_color(t2["abbr"])
+            c1_color = _chart_color(get_team_color(t1["abbr"]))
+            c2_color = _chart_color(get_team_color(t2["abbr"]))
 
             rows_html = ""
             for lbl, key in zip(stat_labels, stat_keys):
@@ -1757,7 +1758,7 @@ def page_comparison(all_teams: dict):
 
 def page_offensive_profile(team: dict, all_teams: dict):
     abbr_sel = team["abbreviation"]
-    color = get_team_color(abbr_sel)
+    color = _chart_color(get_team_color(abbr_sel))
     r_c, g_c, b_c = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
 
     # Preparar dados de zonas para todos os times
@@ -1980,7 +1981,7 @@ def page_offensive_profile(team: dict, all_teams: dict):
                     "Time": t["abbreviation"],
                     "Paint": t.get("pts_paint") or 0,
                     "3PT": t["pts_3pt"],
-                    "color": get_team_color(t["abbreviation"]),
+                    "color": _chart_color(get_team_color(t["abbreviation"])),
                     "selected": t["abbreviation"] == abbr_sel,
                 }
                 for t in all_teams.values()
@@ -2321,7 +2322,7 @@ def page_players():
         return
 
     # ── Header do jogador ──
-    color = get_team_color(pstats["team_abbr"])
+    color = _chart_color(get_team_color(pstats["team_abbr"]))
     r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
 
     st.markdown(
