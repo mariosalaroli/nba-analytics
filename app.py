@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.graph_objects as go
 import plotly.express as px
+from datetime import datetime
 from pathlib import Path
 from nba_data import (
     ensure_fresh_data,
@@ -317,6 +318,15 @@ def render_sidebar(cache: dict) -> tuple[dict, str]:
 # ─── Helpers de visualização ──────────────────────────────────────────────────
 
 
+def _fmt_date(iso: str) -> str:
+    """Converte 'YYYY-MM-DD' → 'DD/MM' para exibição."""
+    try:
+        d = datetime.strptime(iso, "%Y-%m-%d")
+        return d.strftime("%d/%m")
+    except (ValueError, TypeError):
+        return str(iso)
+
+
 def render_streak_chips(games: list[dict]) -> str:
     chips = []
     for g in reversed(games):
@@ -440,7 +450,7 @@ def last_games_chart(games: list[dict], team_color: str) -> go.Figure:
         paper_bgcolor="white",
         xaxis=dict(
             tickvals=list(range(len(df))),
-            ticktext=df["date"].tolist(),
+            ticktext=[_fmt_date(d) for d in df["date"]],
             tickfont=dict(size=10, family="DM Mono"),
             gridcolor="#f5f5f5",
         ),
@@ -655,7 +665,7 @@ def page_overview(team: dict, all_teams: dict):
         for g in team["last_games"][:10]:
             games_data.append(
                 {
-                    "Data": g["date"],
+                    "Data": _fmt_date(g["date"]),
                     "Jogo": g["matchup"],
                     "W/L": g["wl"],
                     "PTS": g["pts"],
@@ -1160,9 +1170,9 @@ def page_games(team: dict):
         icon = "✅" if g["wl"] == "W" else "❌"
         opp_pts = opp_pts_map.get(game_id)
         if opp_pts is not None:
-            label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} x {opp_pts}"
+            label = f"{icon} {_fmt_date(g['date'])} — {g['matchup']} — {g['pts']} x {opp_pts}"
         else:
-            label = f"{icon} {g['date']} — {g['matchup']} — {g['pts']} pts"
+            label = f"{icon} {_fmt_date(g['date'])} — {g['matchup']} — {g['pts']} pts"
 
         with st.expander(label, expanded=False):
             if not game_id:
@@ -1479,7 +1489,7 @@ def page_comparison(all_teams: dict):
         for g in h2h_games:
             h2h_rows.append(
                 {
-                    "Data": g["date"],
+                    "Data": _fmt_date(g["date"]),
                     "Confronto": g["matchup"],
                     "R": g["wl"],
                     "Pts": g["pts"],
@@ -2282,6 +2292,7 @@ def page_players():
             "plus_minus",
         ]
     ].copy()
+    df_display["date"] = df_display["date"].apply(_fmt_date)
     df_display.columns = [
         "Data",
         "Jogo",
@@ -2334,7 +2345,7 @@ def page_players():
 
     # ── Gráficos de tendência (últimos 10 jogos) ──
     all_games_rev = list(reversed(game_log))
-    dates = [g["date"] for g in all_games_rev]
+    dates = [_fmt_date(g["date"]) for g in all_games_rev]
 
     def trend_chart(values, title, avg_val, season_avg):
         fig, ax = plt.subplots(figsize=(6, 2.8))

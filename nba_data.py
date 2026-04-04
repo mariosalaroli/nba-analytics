@@ -59,6 +59,14 @@ def _i(row, col):
         return None
 
 
+def _parse_game_date(raw: str) -> str:
+    """Converte data da NBA API (ex: 'MAR 30, 2026') para ISO 'YYYY-MM-DD'."""
+    try:
+        return datetime.strptime(raw, "%b %d, %Y").strftime("%Y-%m-%d")
+    except (ValueError, TypeError):
+        return str(raw)
+
+
 def init_db(conn: sqlite3.Connection):
     conn.executescript(
         """
@@ -296,7 +304,7 @@ def fetch_last_games(team_id: int, n: int = 10) -> list[dict]:
         games.append(
             {
                 "game_id": str(row["Game_ID"]),
-                "date": str(row["GAME_DATE"]),
+                "date": _parse_game_date(str(row["GAME_DATE"])),
                 "matchup": str(row["MATCHUP"]),
                 "wl": str(row["WL"]),
                 "pts": int(row["PTS"]),
@@ -807,7 +815,7 @@ def fetch_player_game_log(player_id: int, n: int = 10) -> list[dict]:
     for _, row in df.iterrows():
         games.append(
             {
-                "date": str(row["GAME_DATE"]),
+                "date": _parse_game_date(str(row["GAME_DATE"])),
                 "matchup": str(row["MATCHUP"]),
                 "wl": str(row["WL"]),
                 "min": int(row["MIN"]) if pd.notna(row["MIN"]) else 0,
@@ -863,7 +871,7 @@ def fetch_head_to_head(team_id: int, opponent_abbr: str) -> list[dict]:
         games.append(
             {
                 "game_id": str(row["Game_ID"]),
-                "date": str(row["GAME_DATE"]),
+                "date": _parse_game_date(str(row["GAME_DATE"])),
                 "matchup": str(row["MATCHUP"]),
                 "wl": str(row["WL"]),
                 "pts": int(row["PTS"]),
