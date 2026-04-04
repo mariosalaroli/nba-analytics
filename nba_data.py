@@ -21,7 +21,10 @@ from nba_api.stats.endpoints import (
 )
 
 SEASON = "2025-26"
-DB_PATH = Path("data/nba.db")
+# Streamlit Cloud monta o repo como read-only; usar /tmp para o banco
+import os as _os
+
+DB_PATH = Path("/tmp/nba.db") if _os.path.exists("/mount/src") else Path("data/nba.db")
 SLEEP = 0.8
 API_TIMEOUT = 60
 API_RETRIES = 3
