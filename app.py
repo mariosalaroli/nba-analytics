@@ -2575,15 +2575,16 @@ def page_players():
                     )
                     f["op"] = new_op
                 with fc3:
-                    new_val = st.number_input(
+                    raw_val = st.text_input(
                         "Valor",
-                        value=float(f["val"]),
-                        step=1.0,
-                        format="%.1f",
+                        value=str(float(f["val"])),
                         key=f"fv_{ver}_{i}",
                         label_visibility="collapsed",
                     )
-                    f["val"] = new_val
+                    try:
+                        f["val"] = float(raw_val)
+                    except (ValueError, TypeError):
+                        f["val"] = 0.0
 
             has_remove = len(filters) > 1
             btn1, btn2, _, btn3, btn4 = st.columns([1.5, 1, 6, 1.5, 1.5])
