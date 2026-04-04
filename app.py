@@ -1506,7 +1506,7 @@ def page_comparison(all_teams: dict):
         ),
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
-        height=480,
+        height=620,
         margin=dict(l=50, r=50, t=30, b=30),
         paper_bgcolor="white",
     )
@@ -1531,7 +1531,7 @@ def page_comparison(all_teams: dict):
             marker_line=dict(color="rgba(0,0,0,0.3)", width=0.5),
             text=[f"{v:.1f}" for v in vals_b],
             textposition="inside",
-            textfont=dict(size=13, family="DM Mono", color="white"),
+            textfont=dict(size=12, family="DM Mono", color="white"),
         )
     )
     fig_bars.add_trace(
@@ -1544,18 +1544,20 @@ def page_comparison(all_teams: dict):
             marker_line=dict(color="rgba(0,0,0,0.3)", width=0.5),
             text=[f"{v:.1f}" for v in vals_a],
             textposition="inside",
-            textfont=dict(size=13, family="DM Mono", color="white"),
+            textfont=dict(size=12, family="DM Mono", color="white"),
         )
     )
     fig_bars.update_layout(
         barmode="group",
-        height=480,
+        height=620,
+        bargap=0.15,
+        bargroupgap=0.05,
         margin=dict(l=0, r=0, t=30, b=10),
         plot_bgcolor="white",
         paper_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         xaxis=dict(showgrid=True, gridcolor="#f5f5f5", showticklabels=False),
-        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), autorange="reversed"),
+        yaxis=dict(tickfont=dict(size=12, family="DM Mono"), autorange="reversed"),
     )
 
     with col_bars:
