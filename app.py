@@ -1405,44 +1405,150 @@ def page_comparison(all_teams: dict):
         "+/−",
     ]
 
-    fig = go.Figure()
+    # ── Layout lado a lado: Radar (esq.) + Barras horizontais (dir.) ──
+    col_radar, col_bars = st.columns(2)
+
+    # — Radar comparativo (dois times sobrepostos) —
+    radar_keys = [
+        "ast",
+        "fg_pct",
+        "off_rating",
+        "pts",
+        "reb",
+        "blk",
+        "def_rating",
+        "stl",
+    ]
+    radar_labels = [
+        "Assist.",
+        "FG%",
+        "Off Rtg",
+        "Pontos",
+        "Rebotes",
+        "Bloqueios",
+        "Def Rtg",
+        "Roubos",
+    ]
+    invert_radar = {"def_rating"}
+
+    def _norm_team(td):
+        vals = []
+        for key in radar_keys:
+            all_v = [t[key] for t in all_teams.values()]
+            mn, mx = min(all_v), max(all_v)
+            norm = (td[key] - mn) / (mx - mn + 1e-9) * 10
+            if key in invert_radar:
+                norm = 10 - norm
+            vals.append(norm)
+        return vals
+
+    vals_radar_a = _norm_team(ta)
+    vals_radar_b = _norm_team(tb)
+
+    r_a, g_a, b_a = int(ca[1:3], 16), int(ca[3:5], 16), int(ca[5:7], 16)
+    r_b, g_b, b_b = int(cb[1:3], 16), int(cb[3:5], 16), int(cb[5:7], 16)
+
+    off_color = "#1565C0"
+    def_color = "#C62828"
+    _lbl_colors = [off_color] * 4 + [def_color] * 4
+
+    fig_radar = go.Figure()
+    fig_radar.add_trace(
+        go.Scatterpolar(
+            r=vals_radar_a + [vals_radar_a[0]],
+            theta=radar_labels + [radar_labels[0]],
+            fill="toself",
+            fillcolor=f"rgba({r_a},{g_a},{b_a},0.15)",
+            line=dict(color=ca, width=2),
+            name=ta["nickname"],
+        )
+    )
+    fig_radar.add_trace(
+        go.Scatterpolar(
+            r=vals_radar_b + [vals_radar_b[0]],
+            theta=radar_labels + [radar_labels[0]],
+            fill="toself",
+            fillcolor=f"rgba({r_b},{g_b},{b_b},0.15)",
+            line=dict(color=cb, width=2),
+            name=tb["nickname"],
+        )
+    )
+    fig_radar.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 10],
+                showticklabels=False,
+                gridcolor="#eee",
+                showline=False,
+            ),
+            angularaxis=dict(
+                tickfont=dict(size=12, family="DM Sans", weight="bold"),
+                tickvals=radar_labels,
+                ticktext=[
+                    f"<span style='color:{c}'>{l}</span>"
+                    for l, c in zip(radar_labels, _lbl_colors)
+                ],
+            ),
+            bgcolor="white",
+            gridshape="circular",
+        ),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+        height=480,
+        margin=dict(l=50, r=50, t=30, b=30),
+        paper_bgcolor="white",
+    )
+
+    with col_radar:
+        st.plotly_chart(
+            fig_radar, use_container_width=True, config={"displayModeBar": False}
+        )
+
+    # — Barras horizontais —
     vals_a = [ta[k] for k in stats_keys]
     vals_b = [tb[k] for k in stats_keys]
 
-    fig.add_trace(
-        go.Bar(
-            name=ta["nickname"],
-            x=labels,
-            y=vals_a,
-            marker_color=ca,
-            text=[f"{v:.1f}" for v in vals_a],
-            textposition="inside",
-            textfont=dict(size=10, family="DM Mono", color="white"),
-        )
-    )
-    fig.add_trace(
+    fig_bars = go.Figure()
+    fig_bars.add_trace(
         go.Bar(
             name=tb["nickname"],
-            x=labels,
-            y=vals_b,
+            y=labels,
+            x=vals_b,
+            orientation="h",
             marker_color=cb,
             text=[f"{v:.1f}" for v in vals_b],
             textposition="inside",
             textfont=dict(size=10, family="DM Mono", color="white"),
         )
     )
-
-    fig.update_layout(
+    fig_bars.add_trace(
+        go.Bar(
+            name=ta["nickname"],
+            y=labels,
+            x=vals_a,
+            orientation="h",
+            marker_color=ca,
+            text=[f"{v:.1f}" for v in vals_a],
+            textposition="inside",
+            textfont=dict(size=10, family="DM Mono", color="white"),
+        )
+    )
+    fig_bars.update_layout(
         barmode="group",
-        height=320,
+        height=480,
         margin=dict(l=0, r=0, t=30, b=10),
         plot_bgcolor="white",
         paper_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
-        yaxis=dict(showgrid=True, gridcolor="#f5f5f5", showticklabels=False),
-        xaxis=dict(tickfont=dict(size=12, family="DM Mono")),
+        xaxis=dict(showgrid=True, gridcolor="#f5f5f5", showticklabels=False),
+        yaxis=dict(tickfont=dict(size=11, family="DM Mono"), autorange="reversed"),
     )
-    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+
+    with col_bars:
+        st.plotly_chart(
+            fig_bars, use_container_width=True, config={"displayModeBar": False}
+        )
 
     # Tabela resumo
     lower_is_better = {"def_rating", "tov"}
