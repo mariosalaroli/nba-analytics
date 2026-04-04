@@ -1512,14 +1512,9 @@ def page_comparison(all_teams: dict):
     )
 
     with col_radar:
-        st.markdown(
-            "<div style='display:flex;align-items:center;justify-content:center;height:620px;'>",
-            unsafe_allow_html=True,
-        )
         st.plotly_chart(
             fig_radar, use_container_width=True, config={"displayModeBar": False}
         )
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # — Barras horizontais —
     vals_a = [ta[k] for k in stats_keys]
