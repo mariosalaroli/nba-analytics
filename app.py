@@ -212,6 +212,16 @@ def get_team_color(abbr: str) -> str:
     return colors.get(abbr, "#333333")
 
 
+def _chart_color(hex_color: str) -> str:
+    """Escurece cores muito claras para garantir contraste em fundo branco."""
+    r, g, b = int(hex_color[1:3], 16), int(hex_color[3:5], 16), int(hex_color[5:7], 16)
+    lum = 0.299 * r + 0.587 * g + 0.114 * b
+    if lum > 170:
+        factor = 0.55
+        r, g, b = int(r * factor), int(g * factor), int(b * factor)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 # ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 
@@ -506,10 +516,10 @@ def radar_chart(team: dict, all_teams: dict) -> go.Figure:
             norm = 10 - norm
         team_vals.append(norm)
 
-    color = get_team_color(team["abbreviation"])
+    color = _chart_color(get_team_color(team["abbreviation"]))
     # Convert hex color to rgba for fillcolor (Plotly doesn't support 8-char hex)
     r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
-    fill_rgba = f"rgba({r},{g},{b},0.2)"
+    fill_rgba = f"rgba({r},{g},{b},0.3)"
 
     # Cores por categoria: ofensivo vs defensivo
     off_color = "#1565C0"  # azul
@@ -1370,7 +1380,7 @@ def page_comparison(all_teams: dict):
     st.session_state["_compare_b"] = b
 
     ta, tb = all_teams[a], all_teams[b]
-    ca, cb = get_team_color(a), get_team_color(b)
+    ca, cb = _chart_color(get_team_color(a)), _chart_color(get_team_color(b))
 
     stats_keys = [
         "pts",
@@ -1458,8 +1468,8 @@ def page_comparison(all_teams: dict):
             r=vals_radar_a + [vals_radar_a[0]],
             theta=radar_labels + [radar_labels[0]],
             fill="toself",
-            fillcolor=f"rgba({r_a},{g_a},{b_a},0.15)",
-            line=dict(color=ca, width=2),
+            fillcolor=f"rgba({r_a},{g_a},{b_a},0.35)",
+            line=dict(color=ca, width=2.5),
             name=ta["nickname"],
         )
     )
@@ -1468,8 +1478,8 @@ def page_comparison(all_teams: dict):
             r=vals_radar_b + [vals_radar_b[0]],
             theta=radar_labels + [radar_labels[0]],
             fill="toself",
-            fillcolor=f"rgba({r_b},{g_b},{b_b},0.15)",
-            line=dict(color=cb, width=2),
+            fillcolor=f"rgba({r_b},{g_b},{b_b},0.35)",
+            line=dict(color=cb, width=2.5),
             name=tb["nickname"],
         )
     )
@@ -1517,6 +1527,7 @@ def page_comparison(all_teams: dict):
             x=vals_b,
             orientation="h",
             marker_color=cb,
+            marker_line=dict(color="rgba(0,0,0,0.3)", width=0.5),
             text=[f"{v:.1f}" for v in vals_b],
             textposition="inside",
             textfont=dict(size=10, family="DM Mono", color="white"),
@@ -1529,6 +1540,7 @@ def page_comparison(all_teams: dict):
             x=vals_a,
             orientation="h",
             marker_color=ca,
+            marker_line=dict(color="rgba(0,0,0,0.3)", width=0.5),
             text=[f"{v:.1f}" for v in vals_a],
             textposition="inside",
             textfont=dict(size=10, family="DM Mono", color="white"),
