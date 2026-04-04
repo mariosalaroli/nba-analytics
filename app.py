@@ -1531,7 +1531,7 @@ def page_comparison(all_teams: dict):
             marker_line=dict(color="rgba(0,0,0,0.3)", width=0.5),
             text=[f"{v:.1f}" for v in vals_b],
             textposition="inside",
-            textfont=dict(size=10, family="DM Mono", color="white"),
+            textfont=dict(size=13, family="DM Mono", color="white"),
         )
     )
     fig_bars.add_trace(
@@ -1544,7 +1544,7 @@ def page_comparison(all_teams: dict):
             marker_line=dict(color="rgba(0,0,0,0.3)", width=0.5),
             text=[f"{v:.1f}" for v in vals_a],
             textposition="inside",
-            textfont=dict(size=10, family="DM Mono", color="white"),
+            textfont=dict(size=13, family="DM Mono", color="white"),
         )
     )
     fig_bars.update_layout(
