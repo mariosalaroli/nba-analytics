@@ -30,6 +30,7 @@ from nba_data import (
     save_players_to_db,
     load_season,
     load_all_teams,
+    load_injuries,
 )
 
 # ─── Configuração da página ───────────────────────────────────────────────────
@@ -694,6 +695,34 @@ def page_overview(team: dict, all_teams: dict):
         if games_data:
             df_games = pd.DataFrame(games_data)
             st.dataframe(df_games, width="stretch", hide_index=True)
+
+    # ── Lesões ──
+    injuries = load_injuries(team["abbreviation"])
+    if injuries:
+        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="section-header">🏥 Lesões ({len(injuries)})</div>',
+            unsafe_allow_html=True,
+        )
+        inj_data = []
+        for inj in injuries:
+            status = inj["status"]
+            if status == "Out":
+                badge = '<span style="background:#C62828;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.85em">Out</span>'
+            else:
+                badge = '<span style="background:#F9A825;color:#000;padding:2px 8px;border-radius:4px;font-size:0.85em">Day-To-Day</span>'
+            inj_data.append(
+                {
+                    "Jogador": inj["player"],
+                    "Status": badge,
+                    "Detalhe": inj["comment"],
+                }
+            )
+        df_inj = pd.DataFrame(inj_data)
+        st.markdown(
+            df_inj.to_html(escape=False, index=False),
+            unsafe_allow_html=True,
+        )
 
 
 def page_stats(team: dict, all_teams: dict):
