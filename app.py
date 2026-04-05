@@ -729,7 +729,9 @@ def page_overview(team: dict, all_teams: dict):
             )
         df_inj = pd.DataFrame(inj_data)
         st.markdown(
-            df_inj.to_html(escape=False, index=False),
+            df_inj.to_html(escape=False, index=False).replace(
+                "<th>", '<th style="text-align:left">'
+            ),
             unsafe_allow_html=True,
         )
 
