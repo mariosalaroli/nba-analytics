@@ -148,6 +148,19 @@ section[data-testid="stSidebar"] button[kind="secondary"]:hover {
     opacity: 0 !important;
     transition: none !important;
 }
+
+/* Mobile: metric cards 2 por linha */
+@media (max-width: 768px) {
+    div[data-testid="column"] {
+        width: calc(50% - 0.5rem) !important;
+        flex: 0 0 calc(50% - 0.5rem) !important;
+        min-width: calc(50% - 0.5rem) !important;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+}
 </style>
 """,
     unsafe_allow_html=True,
