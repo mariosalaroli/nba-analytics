@@ -148,29 +148,6 @@ section[data-testid="stSidebar"] button[kind="secondary"]:hover {
     opacity: 0 !important;
     transition: none !important;
 }
-
-/* Mobile: metric cards 2 por linha */
-@media (max-width: 768px) {
-    .block-container { padding: 0.5rem 0.8rem !important; }
-    div[data-testid="stHorizontalBlock"] {
-        flex-wrap: wrap !important;
-        gap: 0.4rem !important;
-        display: flex !important;
-        flex-direction: row !important;
-    }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: calc(50% - 0.3rem) !important;
-        flex: 0 0 calc(50% - 0.3rem) !important;
-        min-width: calc(50% - 0.3rem) !important;
-        max-width: calc(50% - 0.3rem) !important;
-    }
-    div[data-testid="metric-container"] {
-        padding: 0.6rem 0.8rem !important;
-    }
-    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
-        font-size: 1.2rem !important;
-    }
-}
 </style>
 """,
     unsafe_allow_html=True,
