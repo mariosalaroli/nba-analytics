@@ -302,7 +302,22 @@ def save_injuries_to_db(conn: sqlite3.Connection):
             ),
         )
     conn.commit()
+    now = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO meta (key, value) VALUES ('injuries_update', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (now,),
+    )
+    conn.commit()
     return len(rows)
+
+
+def get_injuries_update() -> str | None:
+    """Retorna a data/hora da última atualização de injuries."""
+    conn = get_connection()
+    row = conn.execute("SELECT value FROM meta WHERE key='injuries_update'").fetchone()
+    conn.close()
+    return row["value"] if row else None
 
 
 def get_all_teams() -> list[dict]:

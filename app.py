@@ -32,6 +32,7 @@ from nba_data import (
     load_all_teams,
     load_injuries,
     save_injuries_to_db,
+    get_injuries_update,
 )
 
 # ─── Configuração da página ───────────────────────────────────────────────────
@@ -702,8 +703,27 @@ def page_overview(team: dict, all_teams: dict):
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
     col_title, col_btn = st.columns([4, 1])
     with col_title:
+        inj_upd = get_injuries_update()
+        inj_upd_str = ""
+        if inj_upd:
+            try:
+                from datetime import timedelta as _td2, timezone as _tz2
+
+                _brt2 = _tz2(_td2(hours=-3))
+                _dt_inj = datetime.fromisoformat(inj_upd)
+                if _dt_inj.tzinfo is None:
+                    _dt_inj = _dt_inj.replace(tzinfo=_tz2.utc)
+                _dt_inj = _dt_inj.astimezone(_brt2)
+                inj_upd_str = f' <span style="font-size:0.75em;color:#888">atualizado {_dt_inj.strftime("%d/%m %H:%M")}</span>'
+            except Exception:
+                pass
+        count_label = (
+            "{0} jogador".format(len(injuries))
+            if len(injuries) == 1
+            else "{0} jogadores".format(len(injuries)) if injuries else "nenhuma"
+        )
         st.markdown(
-            f'<div class="section-header">🏥 Lesões ({"{0} jogador".format(len(injuries)) if len(injuries) == 1 else "{0} jogadores".format(len(injuries)) if injuries else "nenhuma"})</div>',
+            f'<div class="section-header">🏥 Lesões ({count_label}){inj_upd_str}</div>',
             unsafe_allow_html=True,
         )
     with col_btn:
