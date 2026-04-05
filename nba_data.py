@@ -4,7 +4,9 @@ Atualiza automaticamente no primeiro uso de cada dia.
 """
 
 import time
+import json
 import sqlite3
+import urllib.request
 import pandas as pd
 from datetime import datetime, date, timezone
 from pathlib import Path
@@ -159,6 +161,15 @@ def init_db(conn: sqlite3.Connection):
             ft_pct    REAL,
             UNIQUE(team_abbr, date, matchup)
         );
+        CREATE TABLE IF NOT EXISTS injuries (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_abbr  TEXT,
+            player     TEXT,
+            status     TEXT,
+            comment    TEXT,
+            detail     TEXT,
+            updated_at TEXT
+        );
         CREATE TABLE IF NOT EXISTS players (
             player_id      INTEGER PRIMARY KEY,
             player_name    TEXT,
@@ -231,6 +242,67 @@ def _migrate_columns(conn: sqlite3.Connection, table: str, columns: dict):
         if col not in existing:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
     conn.commit()
+
+
+def _build_espn_team_map() -> dict:
+    """Mapeia ESPN displayName -> abbreviation NBA."""
+    mapping = {}
+    for t in nba_teams_static.get_teams():
+        mapping[t["full_name"]] = t["abbreviation"]
+    # ESPN pode usar nomes ligeiramente diferentes
+    mapping["LA Clippers"] = "LAC"
+    return mapping
+
+
+_ESPN_TEAM_MAP = _build_espn_team_map()
+
+
+def fetch_injuries() -> list[dict]:
+    """Busca injury report da ESPN e retorna lista de dicts prontos para o BD."""
+    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    resp = urllib.request.urlopen(req, timeout=30)
+    data = json.loads(resp.read())
+    rows = []
+    for team in data.get("injuries", []):
+        espn_name = team.get("displayName", "")
+        abbr = _ESPN_TEAM_MAP.get(espn_name)
+        if not abbr:
+            continue
+        for inj in team.get("injuries", []):
+            ath = inj.get("athlete", {})
+            rows.append(
+                {
+                    "team_abbr": abbr,
+                    "player": ath.get("displayName", ""),
+                    "status": inj.get("status", ""),
+                    "comment": inj.get("shortComment", ""),
+                    "detail": inj.get("longComment", ""),
+                    "updated_at": inj.get("date", ""),
+                }
+            )
+    return rows
+
+
+def save_injuries_to_db(conn: sqlite3.Connection):
+    """Baixa injuries da ESPN e grava no BD (replace completo)."""
+    rows = fetch_injuries()
+    conn.execute("DELETE FROM injuries")
+    for r in rows:
+        conn.execute(
+            "INSERT INTO injuries (team_abbr, player, status, comment, detail, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                r["team_abbr"],
+                r["player"],
+                r["status"],
+                r["comment"],
+                r["detail"],
+                r["updated_at"],
+            ),
+        )
+    conn.commit()
+    return len(rows)
 
 
 def get_all_teams() -> list[dict]:
@@ -624,6 +696,13 @@ def save_to_db(conn: sqlite3.Connection):
     conn.commit()
     print(f"\nDados salvos em {DB_PATH} - {now}")
 
+    print("Buscando injury report (ESPN)...", end=" ", flush=True)
+    try:
+        n = save_injuries_to_db(conn)
+        print(f"ok ({n} jogadores)")
+    except Exception as e:
+        print(f"ERRO: {e}")
+
 
 def save_players_to_db(conn: sqlite3.Connection):
     """Busca stats base + avançadas de todos os jogadores e grava no SQLite."""
@@ -801,6 +880,22 @@ def load_all_players() -> list[dict]:
     """Retorna lista de dicts com stats de todos os jogadores."""
     conn = get_connection()
     rows = conn.execute("SELECT * FROM players ORDER BY pts DESC").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def load_injuries(team_abbr: str | None = None) -> list[dict]:
+    """Carrega injuries do BD. Se team_abbr, filtra por time."""
+    conn = get_connection()
+    if team_abbr:
+        rows = conn.execute(
+            "SELECT * FROM injuries WHERE team_abbr = ? ORDER BY status, player",
+            (team_abbr,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM injuries ORDER BY team_abbr, status, player"
+        ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -1444,6 +1539,13 @@ def force_update():
         (SEASON,),
     )
     conn.commit()
+
+    yield "Baixando injury report (ESPN)..."
+    try:
+        n = save_injuries_to_db(conn)
+        yield f"Injuries: {n} jogadores registrados"
+    except Exception as e:
+        yield f"⚠️ Erro ao baixar injuries: {e}"
 
     yield "Baixando dados de jogadores (base)..."
     save_players_to_db(conn)
