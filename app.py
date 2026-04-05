@@ -31,6 +31,7 @@ from nba_data import (
     load_season,
     load_all_teams,
     load_injuries,
+    save_injuries_to_db,
 )
 
 # ─── Configuração da página ───────────────────────────────────────────────────
@@ -698,12 +699,21 @@ def page_overview(team: dict, all_teams: dict):
 
     # ── Lesões ──
     injuries = load_injuries(team["abbreviation"])
-    if injuries:
-        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    col_title, col_btn = st.columns([4, 1])
+    with col_title:
         st.markdown(
-            f'<div class="section-header">🏥 Lesões ({len(injuries)})</div>',
+            f'<div class="section-header">🏥 Lesões ({"{0} jogador".format(len(injuries)) if len(injuries) == 1 else "{0} jogadores".format(len(injuries)) if injuries else "nenhuma"})</div>',
             unsafe_allow_html=True,
         )
+    with col_btn:
+        if st.button("🔄", help="Atualizar lesões (ESPN)", key="btn_refresh_injuries"):
+            with st.spinner("Baixando..."):
+                conn_inj = get_connection()
+                save_injuries_to_db(conn_inj)
+                conn_inj.close()
+            st.rerun()
+    if injuries:
         inj_data = []
         for inj in injuries:
             status = inj["status"]
