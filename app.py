@@ -708,9 +708,9 @@ def page_overview(team: dict, all_teams: dict):
         for inj in injuries:
             status = inj["status"]
             if status == "Out":
-                badge = '<span style="background:#C62828;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.85em">Out</span>'
+                badge = '<span style="background:#C62828;color:#fff;padding:2px 8px;border-radius:4px;font-size:0.85em">Fora</span>'
             else:
-                badge = '<span style="background:#F9A825;color:#000;padding:2px 8px;border-radius:4px;font-size:0.85em">Day-To-Day</span>'
+                badge = '<span style="background:#F9A825;color:#000;padding:2px 8px;border-radius:4px;font-size:0.85em">Incerto</span>'
             upd = inj.get("updated_at", "")
             if upd:
                 try:
